@@ -1,6 +1,6 @@
 {
     "name": "Casualheim",
-    "version_number": "0.1.0",
+    "version_number": "0.2.0",
     "website_url": "https://github.com/k-Knight/Casualheim",
     "description": "Server and Client mod allows for cancelling attack animation on dodge/jump/block and configuring the health of ashlands mobs.",
     "dependencies": [

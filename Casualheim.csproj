@@ -36,6 +36,10 @@
       <HintPath>libs\0Harmony.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="assembly_utils">
+      <HintPath>libs\assembly_utils.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="assembly_valheim-publicized">
       <HintPath>libs\assembly_valheim-publicized.dll</HintPath>
       <Private>False</Private>
@@ -80,6 +84,10 @@
       <HintPath>libs\MonoMod.Utils.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="SoftReferenceableAssets">
+      <HintPath>libs\SoftReferenceableAssets.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -103,11 +111,16 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AttackSkipPatch.cs" />
-    <Compile Include="MaxHealthPatch.cs" />
-    <Compile Include="Casualheim.cs" />
+    <Compile Include="src\AllowClearedBuildingPatch.cs" />
+    <Compile Include="src\AttackSkipPatch.cs" />
+    <Compile Include="src\DeathPenaltyPatch.cs" />
+    <Compile Include="src\EnemyLevelChancePatch.cs" />
+    <Compile Include="src\MaxHealthPatch.cs" />
+    <Compile Include="src\Casualheim.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SpeedPatch.cs" />
+    <Compile Include="src\SkillCurvePatch.cs" />
+    <Compile Include="src\RegenPatch.cs" />
+    <Compile Include="src\SpeedPatch.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

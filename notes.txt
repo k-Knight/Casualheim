@@ -1,0 +1,197 @@
+in Location.IsInside()
+Void Prefix()
+  Boolean DMD<Location::IsInside>(Location, UnityEngine.Vector3, Single, Boolean)
+    Boolean IsInsideNoBuildLocation(UnityEngine.Vector3)
+      Void DMD<Player::UpdatePlacementGhost>(Player, Boolean)
+        Void Trampoline<Player::UpdatePlacementGhost>?1223006166(Player, Boolean)
+          Void Player_UpdatePlacementGhost(orig_UpdatePlacementGhost, Player, Boolean)
+            Void Hook<Player::UpdatePlacementGhost>?751822796(Player, Boolean)
+              Void DMD<Player::LateUpdate>(Player)
+
+
+in Location.Awake()
+Void Prefix()
+  Void DMD<Location::Awake>(Location)
+    UnityEngine.Object Internal_InstantiateSingle_Injected(UnityEngine.Object, UnityEngine.Vector3 ByRef, UnityEngine.Quaternion ByRef)
+      UnityEngine.Object Internal_InstantiateSingle(UnityEngine.Object, UnityEngine.Vector3, UnityEngine.Quaternion)
+        UnityEngine.Object Instantiate(UnityEngine.Object, UnityEngine.Vector3, UnityEngine.Quaternion)
+          UnityEngine.GameObject Instantiate[GameObject](UnityEngine.GameObject, UnityEngine.Vector3, UnityEngine.Quaternion)
+            UnityEngine.GameObject Instantiate(SoftReferenceableAssets.SoftReference`1[UnityEngine.GameObject], UnityEngine.Vector3, UnityEngine.Quaternion)
+              UnityEngine.GameObject SpawnLocation(ZoneLocation, Int32, UnityEngine.Vector3, UnityEngine.Quaternion, SpawnMode, System.Collections.Generic.List`1[UnityEngine.GameObject])
+                UnityEngine.GameObject SpawnProxyLocation(Int32, Int32, UnityEngine.Vector3, UnityEngine.Quaternion)
+                  Boolean SpawnLocation()
+                    Void Update()
+
+
+//if (location == null)
+//    return;
+//
+//Location component = location.m_prefab.Asset.GetComponent<Location>();
+//
+//if (component == null || !component.m_noBuild)
+//    return;
+//
+//UnityEngine.Debug.Log("");
+//UnityEngine.Debug.Log("!!!   !!!   !!!   !!!   !!!   !!!   !!!   !!!   !!!   !!!   !!!");
+//UnityEngine.Debug.Log("in ZoneSystem.SpawnLocation() :: found no-build location");
+//
+//UnityEngine.Debug.Log("ZoneLocation.Hash :: " + location.Hash);
+//UnityEngine.Debug.Log("ZoneLocation.m_name :: " + location.m_name);
+//UnityEngine.Debug.Log("Location.m_discoverLabel :: " + component.m_discoverLabel);
+//UnityEngine.Debug.Log("Location.m_noBuild :: " + component.m_noBuild);
+//UnityEngine.Debug.Log("Location.name :: " + component.name);
+//UnityEngine.Debug.Log("Location.m_generator.name :: " + component.m_generator.name);
+//
+//UnityEngine.Debug.Log("!!!   !!!   !!!   !!!   !!!   !!!   !!!   !!!   !!!   !!!   !!!");
+//UnityEngine.Debug.Log("");
+//
+//return;
+
+//[HarmonyPatch(typeof(Location), "Awake")]
+//public class TestPatch {
+//    public static HashSet<string> unqie_cs = new HashSet<string>();
+//    public static void Postfix(ref Location __instance) {
+//        StackFrame[] frames = new StackTrace(fNeedFileInfo: true).GetFrames();
+//        string accum = "\n";
+//
+//        for (int i = 0; i < frames.Length; i++)
+//            accum += "    " + new String(' ', i * 2) + frames[i].GetMethod().ToString() + "\n";
+//
+//        if (unqie_cs.Contains(accum))
+//            return;
+//
+//        unqie_cs.Add(accum);
+//        UnityEngine.Debug.Log("");
+//        UnityEngine.Debug.Log("");
+//        UnityEngine.Debug.Log("unique call stack for Location.Awake()");
+//        UnityEngine.Debug.Log(accum);
+//        UnityEngine.Debug.Log("");
+//        print_loc_info(ref __instance);
+//    }
+//}
+
+in ZoneSystem.SpawnLocation() :: found no-build location
+ZoneLocation.Hash :: 441519708
+ZoneLocation.m_name ::
+Location.m_discoverLabel :: $hud_pin_hildir3
+Location.m_noBuild :: True
+Location.name :: Hildir_plainsfortress
+Location.m_generator.name :: DG_Hildir_PlainsFortress
+
+
+in DungeonGenerator.Generate()
+Void Postfix()
+  Void DMD<DungeonGenerator::Generate>(DungeonGenerator, Int32, SpawnMode)
+    Void Generate(SpawnMode)
+      UnityEngine.GameObject SpawnLocation(ZoneLocation, Int32, UnityEngine.Vector3, UnityEngine.Quaternion, SpawnMode, System.Collections.Generic.List`1[UnityEngine.GameObject])
+        Void PlaceLocations(Vector2i, UnityEngine.Vector3, UnityEngine.Transform, Heightmap, System.Collections.Generic.List`1[ZoneSystem+ClearArea], SpawnMode, System.Collections.Generic.List`1[UnityEngine.GameObject])
+          Boolean SpawnZone(Vector2i, SpawnMode, UnityEngine.GameObject ByRef)
+            Boolean CreateGhostZones(UnityEngine.Vector3)
+              Void Update()
+
+
+
+Void DMD<CreatureSpawner::Awake>(CreatureSpawner)
+  UnityEngine.GameObject SpawnLocation(ZoneLocation, Int32, UnityEngine.Vector3, UnityEngine.Quaternion, SpawnMode, System.Collections.Generic.List`1[UnityEngine.GameObject])
+    Void PlaceLocations(Vector2i, UnityEngine.Vector3, UnityEngine.Transform, Heightmap, System.Collections.Generic.List`1[ZoneSystem+ClearArea], SpawnMode, System.Collections.Generic.List`1[UnityEngine.GameObject])
+      Boolean SpawnZone(Vector2i, SpawnMode, UnityEngine.GameObject ByRef)
+        Boolean PokeLocalZone(Vector2i)
+          Boolean CreateLocalZones(UnityEngine.Vector3)
+            Void Update()
+Void DMD<CreatureSpawner::Awake>(CreatureSpawner)
+  Room PlaceRoom(RoomData, UnityEngine.Vector3, UnityEngine.Quaternion, RoomConnection, SpawnMode)
+    Void PlaceStartRoom(SpawnMode)
+      Void GenerateDungeon(SpawnMode)
+        Void GenerateRooms(SpawnMode)
+          Void Generate(Int32, SpawnMode)
+            Void Generate(SpawnMode)
+              UnityEngine.GameObject SpawnLocation(ZoneLocation, Int32, UnityEngine.Vector3, UnityEngine.Quaternion, SpawnMode, System.Collections.Generic.List`1[UnityEngine.GameObject])
+                Void PlaceLocations(Vector2i, UnityEngine.Vector3, UnityEngine.Transform, Heightmap, System.Collections.Generic.List`1[ZoneSystem+ClearArea], SpawnMode, System.Collections.Generic.List`1[UnityEngine.GameObject])
+                  Boolean SpawnZone(Vector2i, SpawnMode, UnityEngine.GameObject ByRef)
+                    Boolean PokeLocalZone(Vector2i)
+                      Boolean CreateLocalZones(UnityEngine.Vector3)
+                        Void Update()
+Void DMD<CreatureSpawner::Awake>(CreatureSpawner)
+  Room PlaceRoom(RoomData, UnityEngine.Vector3, UnityEngine.Quaternion, RoomConnection, SpawnMode)
+    Boolean PlaceRoom(RoomConnection, RoomData, SpawnMode)
+      Boolean PlaceOneRoom(SpawnMode)
+        Void PlaceRooms(SpawnMode)
+          Void GenerateDungeon(SpawnMode)
+            Void GenerateRooms(SpawnMode)
+              Void Generate(Int32, SpawnMode)
+                Void Generate(SpawnMode)
+                  UnityEngine.GameObject SpawnLocation(ZoneLocation, Int32, UnityEngine.Vector3, UnityEngine.Quaternion, SpawnMode, System.Collections.Generic.List`1[UnityEngine.GameObject])
+                    Void PlaceLocations(Vector2i, UnityEngine.Vector3, UnityEngine.Transform, Heightmap, System.Collections.Generic.List`1[ZoneSystem+ClearArea], SpawnMode, System.Collections.Generic.List`1[UnityEngine.GameObject])
+                      Boolean SpawnZone(Vector2i, SpawnMode, UnityEngine.GameObject ByRef)
+                        Boolean PokeLocalZone(Vector2i)
+                          Boolean CreateLocalZones(UnityEngine.Vector3)
+                            Void Update()
+Void DMD<CreatureSpawner::Awake>(CreatureSpawner)
+  Room PlaceRoom(RoomData, UnityEngine.Vector3, UnityEngine.Quaternion, RoomConnection, SpawnMode)
+    Boolean PlaceRoom(RoomConnection, RoomData, SpawnMode)
+      Void PlaceEndCaps(SpawnMode)
+        Void GenerateDungeon(SpawnMode)
+          Void GenerateRooms(SpawnMode)
+            Void Generate(Int32, SpawnMode)
+              Void Generate(SpawnMode)
+                UnityEngine.GameObject SpawnLocation(ZoneLocation, Int32, UnityEngine.Vector3, UnityEngine.Quaternion, SpawnMode, System.Collections.Generic.List`1[UnityEngine.GameObject])
+                  Void PlaceLocations(Vector2i, UnityEngine.Vector3, UnityEngine.Transform, Heightmap, System.Collections.Generic.List`1[ZoneSystem+ClearArea], SpawnMode, System.Collections.Generic.List`1[UnityEngine.GameObject])
+                    Boolean SpawnZone(Vector2i, SpawnMode, UnityEngine.GameObject ByRef)
+                      Boolean PokeLocalZone(Vector2i)
+                        Boolean CreateLocalZones(UnityEngine.Vector3)
+                          Void Update()
+Void DMD<CreatureSpawner::Awake>(CreatureSpawner)
+  UnityEngine.GameObject SpawnLocation(ZoneLocation, Int32, UnityEngine.Vector3, UnityEngine.Quaternion, SpawnMode, System.Collections.Generic.List`1[UnityEngine.GameObject])
+    Void PlaceLocations(Vector2i, UnityEngine.Vector3, UnityEngine.Transform, Heightmap, System.Collections.Generic.List`1[ZoneSystem+ClearArea], SpawnMode, System.Collections.Generic.List`1[UnityEngine.GameObject])
+      Boolean SpawnZone(Vector2i, SpawnMode, UnityEngine.GameObject ByRef)
+        Boolean CreateGhostZones(UnityEngine.Vector3)
+          Void Update()
+Void DMD<CreatureSpawner::Awake>(CreatureSpawner)
+  Room PlaceRoom(RoomData, UnityEngine.Vector3, UnityEngine.Quaternion, RoomConnection, SpawnMode)
+    Void GenerateCampRadial(SpawnMode)
+      Void GenerateRooms(SpawnMode)
+        Void Generate(Int32, SpawnMode)
+          Void Generate(SpawnMode)
+            UnityEngine.GameObject SpawnLocation(ZoneLocation, Int32, UnityEngine.Vector3, UnityEngine.Quaternion, SpawnMode, System.Collections.Generic.List`1[UnityEngine.GameObject])
+              Void PlaceLocations(Vector2i, UnityEngine.Vector3, UnityEngine.Transform, Heightmap, System.Collections.Generic.List`1[ZoneSystem+ClearArea], SpawnMode, System.Collections.Generic.List`1[UnityEngine.GameObject])
+                Boolean SpawnZone(Vector2i, SpawnMode, UnityEngine.GameObject ByRef)
+                  Boolean CreateGhostZones(UnityEngine.Vector3)
+                    Void Update()
+Void DMD<CreatureSpawner::Awake>(CreatureSpawner)
+  Room PlaceRoom(RoomData, UnityEngine.Vector3, UnityEngine.Quaternion, RoomConnection, SpawnMode)
+    Void PlaceWall(Single, Int32, SpawnMode)
+      Void GenerateCampRadial(SpawnMode)
+        Void GenerateRooms(SpawnMode)
+          Void Generate(Int32, SpawnMode)
+            Void Generate(SpawnMode)
+              UnityEngine.GameObject SpawnLocation(ZoneLocation, Int32, UnityEngine.Vector3, UnityEngine.Quaternion, SpawnMode, System.Collections.Generic.List`1[UnityEngine.GameObject])
+                Void PlaceLocations(Vector2i, UnityEngine.Vector3, UnityEngine.Transform, Heightmap, System.Collections.Generic.List`1[ZoneSystem+ClearArea], SpawnMode, System.Collections.Generic.List`1[UnityEngine.GameObject])
+                  Boolean SpawnZone(Vector2i, SpawnMode, UnityEngine.GameObject ByRef)
+                    Boolean CreateGhostZones(UnityEngine.Vector3)
+                      Void Update()
+
+
+
+in Character.Awake() :: encountered unique call stack
+    Void Prefix(Character ByRef)
+      Void DMD<Character::Awake>(Character)
+        Void DMD<Humanoid::Awake>(Humanoid)
+          UnityEngine.Object Internal_InstantiateSingle_Injected(UnityEngine.Object, UnityEngine.Vector3 ByRef, UnityEngine.Quaternion ByRef)
+            UnityEngine.Object Internal_InstantiateSingle(UnityEngine.Object, UnityEngine.Vector3, UnityEngine.Quaternion)
+              UnityEngine.Object Instantiate(UnityEngine.Object, UnityEngine.Vector3, UnityEngine.Quaternion)
+                UnityEngine.GameObject Instantiate[GameObject](UnityEngine.GameObject, UnityEngine.Vector3, UnityEngine.Quaternion)
+                  ZNetView DMD<CreatureSpawner::Spawn>(CreatureSpawner)
+                    Void DMD<CreatureSpawner::UpdateSpawner>(CreatureSpawner)
+
+
+Void Postfix(Location ByRef)
+  Void DMD<Location::Awake>(Location)
+    UnityEngine.Object Internal_InstantiateSingle_Injected(UnityEngine.Object, UnityEngine.Vector3 ByRef, UnityEngine.Quaternion ByRef)
+      UnityEngine.Object Internal_InstantiateSingle(UnityEngine.Object, UnityEngine.Vector3, UnityEngine.Quaternion)
+        UnityEngine.Object Instantiate(UnityEngine.Object, UnityEngine.Vector3, UnityEngine.Quaternion)
+          UnityEngine.GameObject Instantiate[GameObject](UnityEngine.GameObject, UnityEngine.Vector3, UnityEngine.Quaternion)
+            UnityEngine.GameObject Instantiate(SoftReferenceableAssets.SoftReference`1[UnityEngine.GameObject], UnityEngine.Vector3, UnityEngine.Quaternion)
+              UnityEngine.GameObject DMD<ZoneSystem::SpawnLocation>(ZoneSystem, ZoneLocation, Int32, UnityEngine.Vector3, UnityEngine.Quaternion, SpawnMode, System.Collections.Generic.List`1[UnityEngine.GameObject])
+                UnityEngine.GameObject SpawnProxyLocation(Int32, Int32, UnityEngine.Vector3, UnityEngine.Quaternion)
+                  Boolean SpawnLocation()
+                    Void Update()
