@@ -3,10 +3,10 @@ using HarmonyLib;
 using System;
 using UnityEngine;
 
-namespace Casualheim {
-    [HarmonyPatch(typeof(Character), "SetMaxHealth")]
-    public class MaxHealthPatch {
-        public static void Prefix(Character __instance, ref float health) {
+namespace Casualheim.patches {
+    [HarmonyPatch(typeof(Character), "Heal")]
+    public class RegenPatch {
+        public static void Prefix(Character __instance, ref float hp) {
             if (!ThisPlugin.PluginEnabled.Value || __instance == null)
                 return;
 
@@ -25,19 +25,15 @@ namespace Casualheim {
             WeakReference<ConfigEntry<int>> setting_ref;
             ConfigEntry<int> setting;
 
-            if (!ThisPlugin.MaxHealthPercentDict.TryGetValue(text, out setting_ref)) {
-                if (ThisPlugin.DebugOutput.Value && text != "human")
-                    Debug.Log("Casualheim | !!! unmatched enemy normal max health " + text + " :: " + health.ToString());
-
+            if (!ThisPlugin.HealthRegenPercentDict.TryGetValue(text, out setting_ref))
                 return;
-            }
 
             if (!setting_ref.TryGetTarget(out setting))
                 return;
 
-            health = health * ((float)setting.Value / 100.0f);
+            hp = hp * ((float)setting.Value / 100.0f);
             if (ThisPlugin.DebugOutput.Value)
-                Debug.Log("Casualheim.MaxHealthPatch :: " + text + " :: " + health.ToString());
+                Debug.Log("Casualheim.RegenPatch :: " + text + " :: " + __instance.GetHealth() + " / " + __instance.GetMaxHealth() + "(+" + hp + ")");
         }
     }
 }

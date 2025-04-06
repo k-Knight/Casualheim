@@ -1,9 +1,11 @@
 ﻿using HarmonyLib;
 
-namespace Casualheim {
-    [HarmonyPatch(typeof(Humanoid), "GetAttackSpeedFactorMovement")]
-    public class AttackMovementSpeedPatch {
-        public static void Postfix(Humanoid __instance, ref float __result) {
+namespace Casualheim.patches {
+    [HarmonyPatch]
+    public class AttackSlowdownPatch {
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Humanoid), "GetAttackSpeedFactorMovement")]
+        public static void AttackMovementSpeedPatch(Humanoid __instance, ref float __result) {
             if (!ThisPlugin.PluginEnabled.Value || __instance == null)
                 return;
 
@@ -11,11 +13,10 @@ namespace Casualheim {
                 __result = ThisPlugin.PercentAttackMovement.Value / 100.0f;
             }
         }
-    }
 
-    [HarmonyPatch(typeof(Humanoid), "GetAttackSpeedFactorRotation")]
-    public class AttackRotationSpeedPatch {
-        public static void Postfix(Humanoid __instance, ref float __result) {
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Humanoid), "GetAttackSpeedFactorRotation")]
+        public static void AttackRotationSpeedPatch(Humanoid __instance, ref float __result) {
             if (!ThisPlugin.PluginEnabled.Value || __instance == null)
                 return;
 

@@ -23,6 +23,150 @@ Void Prefix()
                     Void Update()
 
 
+
+var info = InventoryGui.m_instance.m_inventoryRoot.Find("Info") as UnityEngine.RectTransform;
+
+var title = info.Find("TitlePanel") as UnityEngine.RectTransform;
+var texts = info.Find("Texts") as UnityEngine.RectTransform;
+var skills = info.Find("Skills") as UnityEngine.RectTransform;
+var trophies = info.Find("Trophies") as UnityEngine.RectTransform;
+var pvp = info.Find("PVP") as UnityEngine.RectTransform;
+
+
+var char_name = title.Find("charactername") as UnityEngine.RectTransform;
+var line_l = title.Find("BraidLineHorisontalMedium (1)") as UnityEngine.RectTransform;
+var line_r = title.Find("BraidLineHorisontalMedium (2)") as UnityEngine.RectTransform;
+
+line_l.anchoredPosition = new UnityEngine.Vector2(line_l.anchoredPosition.x, -13);
+line_r.anchoredPosition = new UnityEngine.Vector2(line_r.anchoredPosition.x, -13);
+
+texts.anchoredPosition = new UnityEngine.Vector2(texts.anchoredPosition.x, -24);
+skills.anchoredPosition = new UnityEngine.Vector2(skills.anchoredPosition.x, -24);
+trophies.anchoredPosition = new UnityEngine.Vector2(trophies.anchoredPosition.x, -24);
+pvp.anchoredPosition = new UnityEngine.Vector2(pvp.anchoredPosition.x, -24);
+
+UnityEngine.RectTransform level_rt = null;
+UnityEngine.GameObject level_go = null;
+TMPro.TextMeshProUGUI level_tm = null;
+
+level_rt = title.Find("level_indicator") as UnityEngine.RectTransform;
+
+if (level_rt == null) {
+	level_go = UnityEngine.Object.Instantiate<GameObject>(char_name.gameObject, title.transform);
+	level_go.name = "level_indicator";
+
+	UnityEngine.Debug.Log("created new level_indicator :: " + level_go);
+
+	level_rt = level_go.GetComponent(typeof(UnityEngine.RectTransform)) as UnityEngine.RectTransform;
+}
+else {
+	level_go = level_rt.gameObject;
+	UnityEngine.Debug.Log("level_indicator already exists :: " + level_go);
+}
+
+level_tm = level_go.GetComponent(typeof(TMPro.TextMeshProUGUI)) as TMPro.TextMeshProUGUI;
+
+level_rt.anchoredPosition = new UnityEngine.Vector2(level_rt.anchoredPosition.x, -26);
+level_tm.color = new UnityEngine.Color(1f, 0.8667f, 0.6784f, 1f);
+level_tm.fontSizeMax = 22f;
+
+
+
+foreach (var font in Resources.FindObjectsOfTypeAll(typeof(TMPro.TMP_FontAsset)) as TMPro.TMP_FontAsset[]) {
+  UnityEngine.Debug.Log(font);
+}
+
+
+
+var info = InventoryGui.m_instance.m_inventoryRoot.Find("Info") as UnityEngine.RectTransform;
+var title = info.Find("TitlePanel") as UnityEngine.RectTransform;
+var texts = info.Find("Texts") as UnityEngine.RectTransform;
+var skills = info.Find("Skills") as UnityEngine.RectTransform;
+var trophies = info.Find("Trophies") as UnityEngine.RectTransform;
+var pvp = info.Find("PVP") as UnityEngine.RectTransform;
+
+var char_name = title.Find("charactername") as UnityEngine.RectTransform;
+var line_l = title.Find("BraidLineHorisontalMedium (1)") as UnityEngine.RectTransform;
+var line_r = title.Find("BraidLineHorisontalMedium (2)") as UnityEngine.RectTransform;
+
+line_l.anchoredPosition = new UnityEngine.Vector2(line_l.anchoredPosition.x, -13);
+line_r.anchoredPosition = new UnityEngine.Vector2(line_r.anchoredPosition.x, -13);
+
+texts.anchoredPosition = new UnityEngine.Vector2(texts.anchoredPosition.x, -24);
+skills.anchoredPosition = new UnityEngine.Vector2(skills.anchoredPosition.x, -24);
+trophies.anchoredPosition = new UnityEngine.Vector2(trophies.anchoredPosition.x, -24);
+pvp.anchoredPosition = new UnityEngine.Vector2(pvp.anchoredPosition.x, -24);
+
+GameObject level_bar_prot = null;
+GameObject level_bgr_prot = null;
+
+foreach (var obj in Resources.FindObjectsOfTypeAll(typeof(GuiBar)) as GuiBar[]) {
+  if(obj.name.Equals("levelbar")) {
+    level_bar_prot = obj.gameObject;
+    break;
+  }
+}
+
+foreach (var obj in Resources.FindObjectsOfTypeAll(typeof(ButtonSfx)) as ButtonSfx[]) {
+  if(obj.name.Equals("Craft")) {
+    level_bgr_prot = obj.gameObject;
+    break;
+  }
+}
+
+var level_bgr_go = UnityEngine.Object.Instantiate<GameObject>(level_bgr_prot, title);
+var level_bgr = level_bgr_go.GetComponent(typeof(RectTransform)) as RectTransform;
+
+GameObject.Destroy(level_bgr.Find("Text").gameObject);
+GameObject.Destroy(level_bgr.Find("Selected").gameObject);
+GameObject.Destroy(level_bgr.Find("gamepad_hint").gameObject);
+GameObject.Destroy(level_bgr_go.GetComponent(typeof(ButtonSfx)));
+GameObject.Destroy(level_bgr_go.GetComponent(typeof(UIGamePad)));
+GameObject.Destroy(level_bgr_go.GetComponent(typeof(ButtonTextColor)));
+
+var level_bar_go = UnityEngine.Object.Instantiate<GameObject>(level_bar_prot, level_bgr.transform);
+var level_bar = level_bar_go.GetComponent(typeof(RectTransform)) as RectTransform;
+Debug.Log(level_bar);
+
+GameObject.Destroy(level_bar.Find("bkg").gameObject);
+GameObject.Destroy(level_bar.Find("bonustext").gameObject);
+GameObject.Destroy(level_bar_go.GetComponent(typeof(GuiBar)));
+
+level_bgr.localPosition = new Vector3(0f, 0f, 0f);
+level_bgr.anchoredPosition = new Vector2(level_bgr.anchoredPosition.x, level_bgr.anchoredPosition.y - 26f);
+level_bgr.sizeDelta = new Vector2(100f, 22f);
+level_bgr_go.name = "cslh_lvl_indicator";
+
+level_bar.anchoredPosition = new Vector2(0f, 0f);
+level_bar.sizeDelta = new Vector2(98.5f, 20f);
+level_bar_go.name = "cslh_lvl_bar_container";
+
+var level_bar_bar = level_bar.Find("bar") as RectTransform;
+level_bar.anchoredPosition = new Vector2(0f, 0f);
+level_bar_bar.sizeDelta = new Vector2(97f, 0f);
+level_bar_bar.gameObject.name = "cslh_lvl_bar";
+
+var level_bar_text_old = level_bar.Find("leveltext") as RectTransform;
+var level_bar_text_go = UnityEngine.Object.Instantiate<GameObject>(char_name.gameObject, level_bar);
+var level_bar_text_tm = level_bar_text_go.GetComponent(typeof(TMPro.TextMeshProUGUI)) as TMPro.TextMeshProUGUI;
+var level_bar_text = level_bar_text_go.GetComponent(typeof(RectTransform)) as RectTransform;
+
+var anchor = level_bar_text_old.anchoredPosition;
+var offset_max = level_bar_text_old.offsetMax;
+var offset_min = level_bar_text_old.offsetMin;
+var size = level_bar_text_old.sizeDelta;
+
+level_bar_text.anchoredPosition = anchor;
+level_bar_text.offsetMax = offset_max;
+level_bar_text.offsetMin = offset_min;
+level_bar_text.sizeDelta = size;
+
+GameObject.Destroy(level_bar_text_old.gameObject);
+
+level_bar_text_go.name = "cslh_lvl_text";
+level_bar_text_tm.color = new UnityEngine.Color(1f, 0.8667f, 0.6784f, 1f);
+level_bar_text_tm.fontSizeMax = 20f;
+
 //if (location == null)
 //    return;
 //

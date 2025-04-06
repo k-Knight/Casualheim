@@ -1,4 +1,5 @@
 ﻿using BepInEx;
+using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using HarmonyLib;
 using System;
@@ -6,16 +7,52 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace Casualheim {
-    [BepInPlugin("Casualheim", "Casualheim", "0.2.0")]
+    [BepInPlugin("Casualheim", "Casualheim", "1.0.0")]
     [BepInProcess("valheim.exe")]
+    [BepInDependency("MK_BetterUI", BepInDependency.DependencyFlags.SoftDependency)]
     public class ThisPlugin : BaseUnityPlugin {
+        public static Harmony harmony_instance = null;
+
+        public static bool ModIsLoaded(string GUID) {
+            foreach (var plugin in Chainloader.PluginInfos)
+                if (plugin.Value.Metadata.GUID.Equals(GUID))
+                    return true;
+
+            return false;
+        }
+
         public void Awake() {
             thisInstance = this;
             MaxHealthDictsInit();
             LoadSettings();
 
-            if (PluginEnabled.Value)
-                new Harmony("Casualheim").PatchAll();
+            if (PluginEnabled.Value) {
+                harmony_instance = new Harmony("Casualheim");
+
+                // gameplay patches
+                harmony_instance.PatchAll(typeof(patches.AllowClearedBuildingPatch));
+                harmony_instance.PatchAll(typeof(patches.AttackCancelPatch));
+                harmony_instance.PatchAll(typeof(patches.AttackSlowdownPatch));
+                harmony_instance.PatchAll(typeof(patches.DeathPenaltyPatch));
+                harmony_instance.PatchAll(typeof(patches.EnemyLevelChancePatch));
+                harmony_instance.PatchAll(typeof(patches.MaxHealthPatch));
+                harmony_instance.PatchAll(typeof(patches.RegenPatch));
+                harmony_instance.PatchAll(typeof(patches.SkillCurvePatch));
+                harmony_instance.PatchAll(typeof(patches.MiningChoppingPatch));
+
+                // leveling patches
+                harmony_instance.PatchAll(typeof(leveling.LevelPatch));
+                harmony_instance.PatchAll(typeof(leveling.StatModificationPatch));
+                if (ModIsLoaded("MK_BetterUI")) {
+                    if (DebugOutput.Value)
+                        Debug.Log("Casualheim | found optional BetterUI dependency, patching ...");
+
+                    harmony_instance.PatchAll(typeof(leveling.DisableBetterUIXPPatch));
+                }
+
+                // gui things
+                harmony_instance.PatchAll(typeof(gui.LevelIndicatorPatch));
+            }
 
             if (DebugOutput.Value)
                 DumpConfiguration();
@@ -28,7 +65,8 @@ namespace Casualheim {
         }
 
         public void OnDestroy() {
-            new Harmony("Casualheim").UnpatchSelf();
+            if (harmony_instance != null)
+                harmony_instance.UnpatchSelf();
         }
 
         public static void MaxHealthDictsInit() {
@@ -68,6 +106,7 @@ namespace Casualheim {
             NumberOfPlayersMax = instance.Config.Bind("General", "NumberOfPlayersMax", 4, "Maximum number of active players to modify boss health and regen.");
             EnemyLevelChanceMultiplier = instance.Config.Bind("General", "EnemyLevelChanceMultiplier", 3f, "My how much the chance of leveling up enemy (stars) is multiplied.");
             AllowClearedBuilding = instance.Config.Bind("General", "AllowClearedDungeonBuilding", true, "Allow building in dungeons/locations when all enemies are dead. May require a new world (kinda).");
+            ChopMineDamageMultiplier = instance.Config.Bind("General", "ChopMineDamageMultiplier", 2f, "Multiplies the damage of chopping and mining (0 for disable).");
 
             EasierSkillCurveEnabled = instance.Config.Bind("Skills", "EasierSkillCurveEnabled", true, "Whether to enable easier skill curve.");
             RequiredExpMultiplier = instance.Config.Bind("Skills", "RequiredExpMultiplier", 1f, "This changes the speed of arithmetic progression in required experience to reach next skill level.");
@@ -105,6 +144,13 @@ namespace Casualheim {
             PercentHealthYagluth = instance.Config.Bind("Boss Health", "PercentHealthYagluth", 100, "Percent of normal Yagluth max health.");
             PercentHealthQueen = instance.Config.Bind("Boss Health", "PercentHealthQueen", 100, "Percent of normal Queen max health.");
             PercentHealthFader = instance.Config.Bind("Boss Health", "PercentHealthFader", 60, "Percent of normal Fader max health.");
+
+            EnableLeveling = instance.Config.Bind("Leveling", "Enable Leveling System", true, "Enables/Disables the leveling system");
+            HealthBoostMultiplier = instance.Config.Bind("Leveling", "Health boost strength multiplier", 1f, "Changes the strength of the health boost (0 for disable).");
+            HealthRegenBoostMultiplier = instance.Config.Bind("Leveling", "Health regen boost strength multiplier", 1f, "Changes the strength of the health regeneration boost (0 for disable).");
+            StaminaBoostMultiplier = instance.Config.Bind("Leveling", "Stamina boost strength multiplier", 1f, "Changes the strength of the stamina boost (0 for disable).");
+            StaminaRegenBoostMultiplier = instance.Config.Bind("Leveling", "Stamina regen boost strength multiplier", 1f, "Changes the strength of the stamina regeneration boost (0 for disable).");
+            SpeedBoostMultiplier = instance.Config.Bind("Leveling", "Speed boost strength multiplier", 1f, "Changes the strength of the movement speed boost (0 for disable).");
         }
 
         public static void DumpConfiguration() {
@@ -116,6 +162,7 @@ namespace Casualheim {
             Debug.Log("Casualheim.GetAllPlayers," + Player.GetAllPlayers().Count);
             Debug.Log("Casualheim.NumberOfPlayersMax," + NumberOfPlayersMax.Value);
             Debug.Log("Casualheim.AllowClearedBuilding," + AllowClearedBuilding.Value);
+            Debug.Log("Casualheim.ChopMineDamageMultiplier," + ChopMineDamageMultiplier.Value);
             Debug.Log("Casualheim.EasierSkillCurveEnabled," + EasierSkillCurveEnabled.Value);
             Debug.Log("Casualheim.RequiredExpMultiplier," + RequiredExpMultiplier.Value);
             Debug.Log("Casualheim.DeathPenaltyMultiplier," + DeathPenaltyMultiplier.Value);
@@ -148,19 +195,26 @@ namespace Casualheim {
             Debug.Log("Casualheim.PercentHealthYagluth," + PercentHealthYagluth.Value);
             Debug.Log("Casualheim.PercentHealthQueen," + PercentHealthQueen.Value);
             Debug.Log("Casualheim.PercentHealthFader," + PercentHealthFader.Value);
+            Debug.Log("Casualheim.EnableLeveling," + EnableLeveling.Value);
+            Debug.Log("Casualheim.HealthBoostMultiplier," + HealthBoostMultiplier.Value);
+            Debug.Log("Casualheim.HealthRegenMultiplier," + HealthRegenBoostMultiplier.Value);
+            Debug.Log("Casualheim.StaminaBoostMultiplier," + StaminaBoostMultiplier.Value);
+            Debug.Log("Casualheim.StaminaRegenBoostMultiplier," + StaminaRegenBoostMultiplier.Value);
+            Debug.Log("Casualheim.SpeedBoostMultiplier," + SpeedBoostMultiplier.Value);
 
             Debug.Log("------------- Casualheim CFG END -------------");
         }
 
         public const string PluginName = "Casualheim";
         public const string PluginAuthor = "k-Knight";
-        public const string PluginVersion = "0.2.0";
+        public const string PluginVersion = "1.0.0";
         public const string PluginGUID = "Casualheim";
 
         public static ConfigEntry<bool> PluginEnabled;
         public static ConfigEntry<bool> DebugOutput;
         public static ConfigEntry<int> NumberOfPlayersMax;
         public static ConfigEntry<bool> AllowClearedBuilding;
+        public static ConfigEntry<float> ChopMineDamageMultiplier;
 
         public static ConfigEntry<bool> EasierSkillCurveEnabled;
         public static ConfigEntry<float> RequiredExpMultiplier;
@@ -199,6 +253,14 @@ namespace Casualheim {
         public static ConfigEntry<int> PercentHealthYagluth;
         public static ConfigEntry<int> PercentHealthQueen;
         public static ConfigEntry<int> PercentHealthFader;
+
+        public static ConfigEntry<bool> EnableLeveling;
+        public static ConfigEntry<float> HealthBoostMultiplier;
+        public static ConfigEntry<float> HealthRegenBoostMultiplier;
+        public static ConfigEntry<float> StaminaBoostMultiplier;
+        public static ConfigEntry<float> StaminaRegenBoostMultiplier;
+        public static ConfigEntry<float> SpeedBoostMultiplier;
+
 
         public static Dictionary<string, WeakReference<ConfigEntry<int>>> MaxHealthPercentDict = new Dictionary<string, WeakReference<ConfigEntry<int>>>();
         public static Dictionary<string, WeakReference<ConfigEntry<int>>> HealthRegenPercentDict = new Dictionary<string, WeakReference<ConfigEntry<int>>>();

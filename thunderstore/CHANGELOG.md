@@ -9,3 +9,7 @@
 > - added changer for enemy level chances (stars)
 > - added possibility to change death penalty for skills
 > - added toggle to allow building in cleared dungeons
+> ### v1.0.0
+> - bug fixes
+> - added leveling system
+> - added multiplier for chopping and mining damage

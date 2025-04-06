@@ -9,6 +9,11 @@ Allows a player to cancel their attack if the attack has not yet dealt damage by
 
 Also allows to configure that severity of slowdown in movement and rotation that attacking applies to the player.
 
+## Leveling system
+Adds an option to add a leveling system that changes player stats based on how overall progress you have in all of your skills.
+
+To turn it on/off you have to restart the game.
+
 ## Allow building in cleared dungeons
 Provides a toggle to enable building in dungeons when all the enemies inside them are dead.
 
@@ -36,5 +41,10 @@ Allows to apply a multiplier to a chance the enemy will spawn with stars / have 
 ## Death penalty adjustment
 Allows to configure the amount of skill loss on death. Also allows to preserve current progress to next skill level.
 
+## Pickaxe and Axe damage to resources
+Allows to configure the multiplier for pickaxe and axe damage they do to the resource objects like stones and trees.
+
 ## Source code
+If you wanna see the source code or report bugs go here:
+
 https://github.com/k-Knight/Casualheim

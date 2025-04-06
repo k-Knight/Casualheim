@@ -1,7 +1,7 @@
 ﻿using HarmonyLib;
 using System.Collections.Generic;
 
-namespace Casualheim {
+namespace Casualheim.patches {
     [HarmonyPatch(typeof(Skills), "LowerAllSkills")]
     public class DeathPenaltyPatch {
         public static bool Prefix(ref Skills __instance, ref float factor) {

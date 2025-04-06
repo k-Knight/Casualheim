@@ -2,7 +2,7 @@
 using UnityEngine;
 using static Skills;
 
-namespace Casualheim {
+namespace Casualheim.patches {
     [HarmonyPatch(typeof(Skill), "GetNextLevelRequirement")]
     public class SkillCurvePatch {
         public static bool Prefix(Skill __instance, ref float __result) {
