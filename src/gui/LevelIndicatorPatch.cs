@@ -13,6 +13,9 @@ namespace Casualheim.gui {
         [HarmonyPostfix]
         [HarmonyPatch(typeof(InventoryGui), "Awake")]
         public static void InventoryGuiAwakePatch() {
+            if (!ThisPlugin.PluginEnabled.Value || !ThisPlugin.EnableLeveling.Value)
+                return;
+
             level_indicator_text = null;
             level_indicator_bar = null;
 

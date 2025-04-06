@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace Casualheim {
-    [BepInPlugin("Casualheim", "Casualheim", "1.0.0")]
+    [BepInPlugin("Casualheim", "Casualheim", "1.0.1")]
     [BepInProcess("valheim.exe")]
     [BepInDependency("MK_BetterUI", BepInDependency.DependencyFlags.SoftDependency)]
     public class ThisPlugin : BaseUnityPlugin {
@@ -207,7 +207,7 @@ namespace Casualheim {
 
         public const string PluginName = "Casualheim";
         public const string PluginAuthor = "k-Knight";
-        public const string PluginVersion = "1.0.0";
+        public const string PluginVersion = "1.0.1";
         public const string PluginGUID = "Casualheim";
 
         public static ConfigEntry<bool> PluginEnabled;

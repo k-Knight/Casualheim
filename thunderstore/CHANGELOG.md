@@ -13,3 +13,5 @@
 > - bug fixes
 > - added leveling system
 > - added multiplier for chopping and mining damage
+> ### v1.0.1
+> - small bug fix
