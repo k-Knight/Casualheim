@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using System.Security.Policy;
 using UnityEngine;
 
 namespace Casualheim.patches {
@@ -84,7 +85,7 @@ namespace Casualheim.patches {
         [HarmonyPostfix]
         [HarmonyPatch(typeof(Humanoid), "OnAttackTrigger")]
         public static void HumanoidOnAttackTriggerPatch(Humanoid __instance) {
-            if (!ThisPlugin.PluginEnabled.Value || __instance == null)
+            if (!ThisPlugin.PluginEnabled.Value)
                 return;
 
             if (__instance.GetType() != typeof(Player) || __instance.m_currentAttack == null)
@@ -100,10 +101,42 @@ namespace Casualheim.patches {
                 player_attack_damage_done_dict[p_hash] = atk_hash;
         }
 
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Player), "Dodge")]
+        public static bool PlayerDodgePatch(Player __instance, ref Vector3 dodgeDir) {
+            if (!ThisPlugin.PluginEnabled.Value || !ThisPlugin.PreventDodgeSpamming.Value)
+                return true;
+
+            if (!__instance.InDodge())
+                __instance.m_queuedDodgeTimer = 0.5f;
+
+            __instance.m_queuedDodgeDir = dodgeDir;
+
+            return false;
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Player), "UpdateDodge")]
+        public static bool PlayerUpdateDodgePatch(Player __instance, ref float dt) {
+            if (!ThisPlugin.PluginEnabled.Value)
+                return true;
+
+            if (__instance.InDodge())
+                return true;
+
+            int p_hash = __instance.GetHashCode();
+
+            if (!block_state_dict.ContainsKey(p_hash) || (Time.fixedTime - block_state_dict[p_hash].block_start_time) > 0.1f)
+                return true;
+
+            __instance.m_queuedDodgeTimer -= dt;
+            return false;
+        }
+
         [HarmonyPostfix]
         [HarmonyPatch(typeof(Player), "InAttack")]
         public static void PlayerInAttackCancelPatch(Player __instance, ref bool __result) {
-            if (!ThisPlugin.PluginEnabled.Value || __instance == null)
+            if (!ThisPlugin.PluginEnabled.Value)
                 return;
 
             int p_hash = __instance.GetHashCode();
@@ -202,7 +235,7 @@ namespace Casualheim.patches {
         [HarmonyPrefix]
         [HarmonyPatch(typeof(Humanoid), "StartAttack")]
         public static bool HumanoidStartAttackCancelPatch(Humanoid __instance, ref bool __result) {
-            if (!ThisPlugin.PluginEnabled.Value || __instance == null)
+            if (!ThisPlugin.PluginEnabled.Value)
                 return true;
 
             if (__instance.GetType() != typeof(Player))
@@ -240,7 +273,7 @@ namespace Casualheim.patches {
         [HarmonyPrefix]
         [HarmonyPatch(typeof(Player), "SetControls")]
         public static void PlayerSetControlsPatch(Player __instance, ref bool attack, ref bool attackHold, ref bool secondaryAttack, ref bool secondaryAttackHold, ref bool block, ref bool blockHold, ref bool dodge) {
-            if (!ThisPlugin.PluginEnabled.Value || __instance == null)
+            if (!ThisPlugin.PluginEnabled.Value)
                 return;
 
             int p_hash = __instance.GetHashCode();

@@ -8,29 +8,6 @@ namespace Casualheim.leveling {
     public class StatModificationPatch {
         public static Dictionary<int, float> stamina_values = new Dictionary<int, float>();
 
-        public static bool TryGetPlayerZDO(ref Character character, out Player player, out ZDO zdo) {
-            player = null;
-            zdo = null;
-
-            if (character.GetType() != typeof(Player))
-                return false;
-
-            player = character as Player;
-            return TryGetPlayerZDO(ref player, out zdo);
-        }
-
-        public static bool TryGetPlayerZDO(ref Player player, out ZDO zdo) {
-            zdo = player.m_nview.GetZDO();
-            if (zdo == null) {
-                if (ThisPlugin.DebugOutput.Value)
-                    Debug.Log("Casualheim.StatModificationPatch | zdo of a player is null !!!");
-
-                return false;
-            }
-
-            return true;
-        }
-
         public static float GetLevelEffectStrength(ref ZDO zdo, float strength_at_100) {
             return ((float)zdo.GetInt("betterui_level")) / 100f / (1f / (strength_at_100 - 1f)) + 1f;
         }
@@ -44,14 +21,10 @@ namespace Casualheim.leveling {
             Player p;
             ZDO zdo;
 
-            if (!TryGetPlayerZDO(ref __instance, out p, out zdo))
+            if (!Util.TryGetPlayerZDO(ref __instance, out p, out zdo))
                 return;
 
             float strength = GetLevelEffectStrength(ref zdo, 1.5f) * ThisPlugin.HealthBoostMultiplier.Value;
-
-            if (ThisPlugin.DebugOutput.Value)
-                Debug.Log("Casualheim.StatModificationPatch | mutiplying max health by [" + strength + "] for player " + p.m_name);
-
             health *= strength;
         }
 
@@ -64,14 +37,10 @@ namespace Casualheim.leveling {
             Player p;
             ZDO zdo;
 
-            if (!TryGetPlayerZDO(ref __instance, out p, out zdo))
+            if (!Util.TryGetPlayerZDO(ref __instance, out p, out zdo))
                 return;
 
             float strength = GetLevelEffectStrength(ref zdo, 1.5f) * ThisPlugin.HealthRegenBoostMultiplier.Value;
-
-            if (ThisPlugin.DebugOutput.Value)
-                Debug.Log("Casualheim.StatModificationPatch | mutiplying heal by [" + strength + "] for player " + p.m_name);
-
             hp *= strength;
         }
 
@@ -83,14 +52,10 @@ namespace Casualheim.leveling {
 
             ZDO zdo;
 
-            if (!TryGetPlayerZDO(ref __instance, out zdo))
+            if (!Util.TryGetPlayerZDO(ref __instance, out zdo))
                 return;
 
             float strength = GetLevelEffectStrength(ref zdo, 1.25f) * ThisPlugin.StaminaBoostMultiplier.Value;
-
-            if (ThisPlugin.DebugOutput.Value)
-                Debug.Log("Casualheim.StatModificationPatch | mutiplying max stamina by [" + strength + "] for player " + __instance.m_name);
-
             stamina *= strength;
         }
 
@@ -120,7 +85,7 @@ namespace Casualheim.leveling {
 
             ZDO zdo;
 
-            if (!TryGetPlayerZDO(ref __instance, out zdo))
+            if (!Util.TryGetPlayerZDO(ref __instance, out zdo))
                 return;
 
             float strength = GetLevelEffectStrength(ref zdo, 2f) * ThisPlugin.StaminaRegenBoostMultiplier.Value;
@@ -140,7 +105,7 @@ namespace Casualheim.leveling {
 
             ZDO zdo;
 
-            if (!TryGetPlayerZDO(ref __instance, out zdo))
+            if (!Util.TryGetPlayerZDO(ref __instance, out zdo))
                 return;
 
             float strength = GetLevelEffectStrength(ref zdo, 1.25f) * ThisPlugin.SpeedBoostMultiplier.Value;
@@ -155,7 +120,7 @@ namespace Casualheim.leveling {
 
             ZDO zdo;
 
-            if (!TryGetPlayerZDO(ref __instance, out zdo))
+            if (!Util.TryGetPlayerZDO(ref __instance, out zdo))
                 return;
 
             // 125% of normal at level 100
@@ -172,12 +137,72 @@ namespace Casualheim.leveling {
             Player p;
             ZDO zdo;
 
-            if (!TryGetPlayerZDO(ref __instance, out p, out zdo))
+            if (!Util.TryGetPlayerZDO(ref __instance, out p, out zdo))
                 return;
 
             // 125% of normal at level 100
             float strength = GetLevelEffectStrength(ref zdo, 1.25f) * ThisPlugin.SpeedBoostMultiplier.Value;
-            p.m_crouchSpeed = 2f * strength;
+            float skill_factor = p.m_skills.GetSkillFactor(Skills.SkillType.Sneak) * 0.5f + 1f;
+            float equipment_factor = 1f + p.GetEquipmentMovementModifier();
+            p.m_crouchSpeed = 2f * strength * skill_factor * equipment_factor;
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Character), "UpdateGroundContact")]
+        public static void CharacteUpdateGroundContactPatch_Prefix(Character __instance) {
+            if (!ThisPlugin.PluginEnabled.Value)
+                return;
+
+            if (!__instance.m_groundContact)
+                return;
+
+            Player p;
+            ZDO zdo;
+
+            if (!Util.TryGetPlayerZDO(ref __instance, out p, out zdo))
+                return;
+
+            float diff = p.m_maxAirAltitude - p.transform.position.y;
+            if (diff <= 0f)
+                return;
+
+            // reduce percentage damage
+            float skill_factor = p.m_skills.GetSkillFactor(Skills.SkillType.Jump) * 0.3f;
+            p.m_maxAirAltitude -= diff * skill_factor;
+
+            if (ThisPlugin.FallWindowMultiplier.Value == 0f)
+                return;
+
+            // extend fall damage window
+            float level_reduction = (GetLevelEffectStrength(ref zdo, 3f) - 1f) * ThisPlugin.FallWindowMultiplier.Value;
+            p.m_maxAirAltitude = Math.Max(p.m_maxAirAltitude - level_reduction, p.transform.position.y);
+        }
+
+        // increse jump boost
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Skills), "GetSkillFactor")]
+        public static void SkillsGetSkillFactorPatch(ref Skills __instance, ref float __result, ref Skills.SkillType skillType) {
+            if (!ThisPlugin.PluginEnabled.Value || ThisPlugin.JumpHeightMultiplier.Value == 0)
+                return;
+
+            if (__instance.m_player == null || skillType != Skills.SkillType.Jump)
+                return;
+
+            ZDO zdo;
+
+            if (!Util.TryGetPlayerZDO(ref __instance.m_player, out zdo))
+                return;
+
+            if (!Util.check_caller(typeof(Character), "Jump"))
+                return;
+
+            // 140% of normal at level 100
+            float strength = GetLevelEffectStrength(ref zdo, 1.4f) * ThisPlugin.JumpHeightMultiplier.Value;
+
+            if (ThisPlugin.DebugOutput.Value)
+                Debug.Log("Casualheim.StatModificationPatch | icreasing jump force " + strength + " times");
+
+            __result *= strength;
         }
     }
 }

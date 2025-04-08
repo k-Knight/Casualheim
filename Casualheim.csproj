@@ -143,6 +143,7 @@
     <Compile Include="src\patches\SkillCurvePatch.cs" />
     <Compile Include="src\patches\RegenPatch.cs" />
     <Compile Include="src\patches\AttackSlowdownPatch.cs" />
+    <Compile Include="src\Util.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

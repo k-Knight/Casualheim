@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Security.Policy;
+﻿using System.Collections.Generic;
 using HarmonyLib;
 using UnityEngine;
 
@@ -14,34 +11,91 @@ namespace Casualheim.patches {
         public static int last_character_drop_hash = -1;
         public static Dictionary<int, int> loc_2_zloc_dict = new Dictionary<int, int>();
 
-        public static bool check_caller(string caller_method) {
-            StackFrame[] frames = new StackTrace(fNeedFileInfo: true).GetFrames();
+        public static bool AssignLocHashDeterministic<T>(ref T obj, out ZDO zdo, out int zloc_hash) where T : MonoBehaviour {
+            zloc_hash = 0;
+            zdo = null;
+            ZNetView nview;
 
-            for (int i = 1; i < frames.Length; i++)
-                if (frames[i].GetMethod().Name == caller_method)
-                    return true;
+            if (!Util.check_caller("DMD<ZoneSystem::SpawnLocation>"))
+                return false;
 
-            return false;
-        }
+            if (!Util.GetSyncThings(ref obj, out nview, out zdo))
+                return false;
+            if (!nview.IsOwner())
+                return false; ;
 
-        public static bool GetLocation(ref CreatureSpawner cs, out Location loc) {
-            if (cs.m_checkedLocation)
-                loc = cs.m_location;
-            else {
-                cs.m_location = Location.GetLocation(cs.transform.position, true);
-                cs.m_checkedLocation = true;
-                loc = cs.m_location;
+            bool loc_checked = zdo.GetBool("zloc_checked");
+            if (loc_checked) {
+                zloc_hash = zdo.GetInt("zloc_hash");
+                return true;
             }
 
-            if (loc == null)
-                return false;
+            if (ThisPlugin.DebugOutput.Value)
+                UnityEngine.Debug.Log("Casualheim | DETERMINISICALLY found zloc hash for " + obj.GetType() + " :: " + zloc_hash);
+
+            zdo.Set("zloc_checked", true);
+            zdo.Set("zloc_hash", last_zone_location_hash);
+            zloc_hash = last_zone_location_hash;
 
             return true;
         }
 
+        // requires outside check of whether we are the owner of ZNetView
+        public static bool AssignLocHashHeuristic<T>(ref T obj, ref ZDO zdo, out int zloc_hash) where T : MonoBehaviour {
+            zloc_hash = 0;
+
+            bool loc_checked = zdo.GetBool("zloc_checked");
+            if (loc_checked) {
+                zloc_hash = zdo.GetInt("zloc_hash");
+                return true;
+            }
+
+            Location loc;
+            Util.GetLocation(ref obj, out loc);
+            if (loc == null)
+                return false;
+
+            if (!loc_2_zloc_dict.ContainsKey(loc.GetHashCode())) {
+                if (ThisPlugin.DebugOutput.Value)
+                    UnityEngine.Debug.Log("Casualheim | CreatureSpawner.Spawn location is not in the dictrionary !!!");
+
+                return false;
+            }
+
+            if (ThisPlugin.DebugOutput.Value)
+                UnityEngine.Debug.Log("Casualheim | HEURISTICALLY found zloc hash for " + obj.GetType() + " :: " + zloc_hash);
+
+            zloc_hash = loc_2_zloc_dict[loc.GetHashCode()];
+            zdo.Set("zloc_checked", true);
+            zdo.Set("zloc_hash", zloc_hash);
+
+            return true;
+        }
+
+        public static void BeforeSpawnerUnitSpawn<T>(ref T obj) where T : MonoBehaviour {
+            if (!ThisPlugin.PluginEnabled.Value || !ThisPlugin.AllowClearedBuilding.Value)
+                return;
+
+            last_creature_spawner_hash = 0;
+
+            ZDO zdo;
+            ZNetView nview;
+
+            if (!Util.GetSyncThings(ref obj, out nview, out zdo))
+                return;
+
+            last_creature_spawner_hash = zdo.GetInt("zloc_hash");
+            if (last_creature_spawner_hash != 0)
+                return;
+
+            int zloc_hash;
+            if (nview.IsOwner() && AssignLocHashHeuristic(ref obj, ref zdo, out zloc_hash))
+                last_creature_spawner_hash = zloc_hash;
+        }
+
         [HarmonyPrefix]
         [HarmonyPatch(typeof(Location), "IsInside")]
-        public static void LocationIsInsideLocationPatch(ref Location __instance, ref bool __result, ref bool buildCheck, ref Vector3 point) {
+        public static void LocationIsInsidePatch(ref Location __instance, ref bool __result, ref bool buildCheck, ref Vector3 point) {
             if (__instance == null || !buildCheck || !__instance.m_noBuild || !__result)
                 return;
 
@@ -80,7 +134,6 @@ namespace Casualheim.patches {
 
                     break;
                 }
-
             }
 
             if (!units_dead)
@@ -118,7 +171,7 @@ namespace Casualheim.patches {
             if (!ThisPlugin.PluginEnabled.Value || !ThisPlugin.AllowClearedBuilding.Value)
                 return;
 
-            if (!check_caller("DMD<ZoneSystem::SpawnLocation>"))
+            if (!Util.check_caller("DMD<ZoneSystem::SpawnLocation>"))
                 return;
 
             loc_2_zloc_dict.Add(__instance.GetHashCode(), last_zone_location_hash);
@@ -158,9 +211,9 @@ namespace Casualheim.patches {
             bool from_cs = false;
             bool from_cd = false;
 
-            if (check_caller("DMD<CreatureSpawner::Spawn>"))
+            if (Util.check_caller("DMD<CreatureSpawner::Spawn>"))
                 from_cs = true;
-            else if (check_caller("DMD<CharacterDrop::OnDeath>"))
+            else if (Util.check_caller("DMD<CharacterDrop::OnDeath>"))
                 from_cd = true;
 
             if (!from_cs && !from_cd)
@@ -188,80 +241,79 @@ namespace Casualheim.patches {
             if (!ThisPlugin.PluginEnabled.Value || !ThisPlugin.AllowClearedBuilding.Value)
                 return;
 
-            if (!check_caller("DMD<ZoneSystem::SpawnLocation>"))
+            ZDO zdo;
+            int zloc_hash;
+            AssignLocHashDeterministic(ref __instance, out zdo, out zloc_hash);
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(SpawnArea), "Awake")]
+        public static void SpawnAreaAwakePatch(ref SpawnArea __instance) {
+            if (!ThisPlugin.PluginEnabled.Value || !ThisPlugin.AllowClearedBuilding.Value)
                 return;
 
-            if (__instance.m_nview == null || !__instance.m_nview.IsOwner())
-                return;
-
-            ZDO zdo = __instance.m_nview.GetZDO();
-
-            if (zdo == null) {
-                if (ThisPlugin.DebugOutput.Value)
-                    UnityEngine.Debug.Log("Casualheim | !!!   !!!   no ZDO for CreatureSpawner   !!!   !!!");
-
-                return;
-            }
-
-            zdo.Set("zloc_hash", last_zone_location_hash);
+            ZDO zdo;
+            int zloc_hash;
+            AssignLocHashDeterministic(ref __instance, out zdo, out zloc_hash);
         }
 
         // Propogation mechanism for zloc_hash into spawners inside the group (probably not needed)
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(CreatureSpawner), "UpdateSpawner")]
-        public static void CreatureSpawnerUpdateSpawnerPatch(ref CreatureSpawner __instance) {
-            if (!ThisPlugin.PluginEnabled.Value || !ThisPlugin.AllowClearedBuilding.Value || __instance == null || __instance.m_nview == null || __instance.m_spawnGroup == null)
-                return;
-
-            ZDO zdo = __instance.m_nview.GetZDO();
-            if (zdo == null)
-                return;
-
-            int zloc_hash = zdo.GetInt("zloc_hash");
-            if (zloc_hash == 0)
-                return;
-
-            Location loc;
-            if (GetLocation(ref __instance, out loc))
-                return;
-
-            List<CreatureSpawner> group_spawners = new List<CreatureSpawner>();
-            foreach (CreatureSpawner creatureSpawner in __instance.m_spawnGroup)
-                group_spawners.Add(creatureSpawner);
-
-            for (int i = 0; i < group_spawners.Count; i++) {
-                try {
-                    CreatureSpawner cs = group_spawners[i];
-                    if (cs == null || cs.m_lastSpawnID == null)
-                        continue;
-
-                    if (cs.m_lastSpawnID.IsNone() || (cs.CanRespawnNow(cs.m_lastSpawnID) && !cs.SpawnedCreatureStillExists(cs.m_lastSpawnID))) {
-                        if (cs.m_nview == null || !cs.m_nview.IsOwner())
-                            return;
-
-                        ZDO zdo_group = cs.m_nview.GetZDO();
-                        if (zdo_group == null)
-                            continue;
-
-                        int zloc_hash_group = zdo_group.GetInt("zloc_hash");
-                        if (zloc_hash_group != 0)
-                            continue;
-
-                        Location group_loc;
-                        if (GetLocation(ref cs, out group_loc))
-                            continue;
-
-                        if (ThisPlugin.DebugOutput.Value)
-                            UnityEngine.Debug.Log("Casualheim | !!!   !!!   no ZDO for CreatureSpawner   !!!   !!!");
-
-                        if (group_loc.GetHashCode() == loc.GetHashCode())
-                            zdo_group.Set("zloc_hash", zloc_hash);
-                    }
-                } catch (Exception e) {
-                    continue;
-                }
-            }
-        }
+        // most likely not needed
+        //[HarmonyPrefix]
+        //[HarmonyPatch(typeof(CreatureSpawner), "UpdateSpawner")]
+        //public static void CreatureSpawnerUpdateSpawnerPatch(ref CreatureSpawner __instance) {
+        //    if (!ThisPlugin.PluginEnabled.Value || !ThisPlugin.AllowClearedBuilding.Value || __instance.m_nview == null || __instance.m_spawnGroup == null)
+        //        return;
+        //
+        //    ZDO zdo = __instance.m_nview.GetZDO();
+        //    if (zdo == null)
+        //        return;
+        //
+        //    int zloc_hash = zdo.GetInt("zloc_hash");
+        //    if (zloc_hash == 0)
+        //        return;
+        //
+        //    Location loc;
+        //    if (GetLocation(ref __instance, out loc))
+        //        return;
+        //
+        //    List<CreatureSpawner> group_spawners = new List<CreatureSpawner>();
+        //    foreach (CreatureSpawner creatureSpawner in __instance.m_spawnGroup)
+        //        group_spawners.Add(creatureSpawner);
+        //
+        //    for (int i = 0; i < group_spawners.Count; i++) {
+        //        try {
+        //            CreatureSpawner cs = group_spawners[i];
+        //            if (cs == null || cs.m_lastSpawnID == null)
+        //                continue;
+        //
+        //            if (cs.m_lastSpawnID.IsNone() || (cs.CanRespawnNow(cs.m_lastSpawnID) && !cs.SpawnedCreatureStillExists(cs.m_lastSpawnID))) {
+        //                if (cs.m_nview == null || !cs.m_nview.IsOwner())
+        //                    return;
+        //
+        //                ZDO zdo_group = cs.m_nview.GetZDO();
+        //                if (zdo_group == null)
+        //                    continue;
+        //
+        //                int zloc_hash_group = zdo_group.GetInt("zloc_hash");
+        //                if (zloc_hash_group != 0)
+        //                    continue;
+        //
+        //                Location group_loc;
+        //                if (GetLocation(ref cs, out group_loc))
+        //                    continue;
+        //
+        //                if (ThisPlugin.DebugOutput.Value)
+        //                    UnityEngine.Debug.Log("Casualheim | !!!   !!!   no ZDO for CreatureSpawner   !!!   !!!");
+        //
+        //                if (group_loc.GetHashCode() == loc.GetHashCode())
+        //                    zdo_group.Set("zloc_hash", zloc_hash);
+        //            }
+        //        } catch (Exception e) {
+        //            continue;
+        //        }
+        //    }
+        //}
 
         [HarmonyPrefix]
         [HarmonyPatch(typeof(CreatureSpawner), "Spawn")]
@@ -269,16 +321,16 @@ namespace Casualheim.patches {
             if (!ThisPlugin.PluginEnabled.Value || !ThisPlugin.AllowClearedBuilding.Value)
                 return;
 
-            last_creature_spawner_hash = 0;
+            BeforeSpawnerUnitSpawn(ref __instance);
+        }
 
-            if (__instance.m_nview == null)
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(SpawnArea), "SpawnOne")]
+        public static void SpawnAreaSpawnOnePatch(ref SpawnArea __instance) {
+            if (!ThisPlugin.PluginEnabled.Value || !ThisPlugin.AllowClearedBuilding.Value)
                 return;
 
-            ZDO zdo = __instance.m_nview.GetZDO();
-            if (zdo == null)
-                return;
-
-            last_creature_spawner_hash = zdo.GetInt("zloc_hash");
+            BeforeSpawnerUnitSpawn(ref __instance);
         }
     }
 }

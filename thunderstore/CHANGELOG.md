@@ -15,3 +15,8 @@
 > - added multiplier for chopping and mining damage
 > ### v1.0.1
 > - small bug fix
+> ### v1.1.0
+> - bug fixes
+> - improved detection of unit spawning within locations
+> - extended leveling system
+> - buffed jump and sneak skills a little

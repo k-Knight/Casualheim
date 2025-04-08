@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace Casualheim {
-    [BepInPlugin("Casualheim", "Casualheim", "1.0.1")]
+    [BepInPlugin("Casualheim", "Casualheim", "1.1.0")]
     [BepInProcess("valheim.exe")]
     [BepInDependency("MK_BetterUI", BepInDependency.DependencyFlags.SoftDependency)]
     public class ThisPlugin : BaseUnityPlugin {
@@ -115,6 +115,7 @@ namespace Casualheim {
 
             PercentAttackMovement = instance.Config.Bind("Attacks", "PercentAttackMovementSpeed", 20, "Percent of normal movement speed that remains while attacking.");
             PercentAttackRotation = instance.Config.Bind("Attacks", "PercentAttackRotationSpeed", 20, "Percent of normal rotation speed that remains while attacking.");
+            PreventDodgeSpamming = instance.Config.Bind("Attacks", "PreventDodgeSpamming", false, "Prevent dodge spamming if player continiously holds down the dodge key.");
 
             PercentCharredTwitcher = instance.Config.Bind("MobHealth", "PercentCharredTwitcherHealth", 100, "Percent of normal health that Charred Twitcher will have.");
             PercentCharredArcher = instance.Config.Bind("MobHealth", "PercentCharredArcherHealth", 100, "Percent of normal health that Charred Marksman will have.");
@@ -151,6 +152,8 @@ namespace Casualheim {
             StaminaBoostMultiplier = instance.Config.Bind("Leveling", "Stamina boost strength multiplier", 1f, "Changes the strength of the stamina boost (0 for disable).");
             StaminaRegenBoostMultiplier = instance.Config.Bind("Leveling", "Stamina regen boost strength multiplier", 1f, "Changes the strength of the stamina regeneration boost (0 for disable).");
             SpeedBoostMultiplier = instance.Config.Bind("Leveling", "Speed boost strength multiplier", 1f, "Changes the strength of the movement speed boost (0 for disable).");
+            JumpHeightMultiplier = instance.Config.Bind("Leveling", "Jump height boost strength multiplier", 1f, "Changes the strength of the jump height boost (0 for disable).");
+            FallWindowMultiplier = instance.Config.Bind("Leveling", "Allowed fall window increase multiplier", 1f, "Changes the strength of allowed fall window increase where player does not receive fall damage (0 for disable).");
         }
 
         public static void DumpConfiguration() {
@@ -169,6 +172,7 @@ namespace Casualheim {
             Debug.Log("Casualheim.EnableSkillLevelProgressLoss," + EnableSkillLevelProgressLoss.Value);
             Debug.Log("Casualheim.PercentAttackMovement," + PercentAttackMovement.Value);
             Debug.Log("Casualheim.PercentAttackRotation," + PercentAttackRotation.Value);
+            Debug.Log("Casualheim.PreventDodgeSpamming," + PreventDodgeSpamming.Value);
             Debug.Log("Casualheim.PercentCharredTwitcher," + PercentCharredTwitcher.Value);
             Debug.Log("Casualheim.PercentCharredArcher," + PercentCharredArcher.Value);
             Debug.Log("Casualheim.PercentCharredMelee," + PercentCharredMelee.Value);
@@ -201,13 +205,15 @@ namespace Casualheim {
             Debug.Log("Casualheim.StaminaBoostMultiplier," + StaminaBoostMultiplier.Value);
             Debug.Log("Casualheim.StaminaRegenBoostMultiplier," + StaminaRegenBoostMultiplier.Value);
             Debug.Log("Casualheim.SpeedBoostMultiplier," + SpeedBoostMultiplier.Value);
+            Debug.Log("Casualheim.JumpHeightMultiplier," + JumpHeightMultiplier.Value);
+            Debug.Log("Casualheim.FallWindowMultiplier," + FallWindowMultiplier.Value);
 
             Debug.Log("------------- Casualheim CFG END -------------");
         }
 
         public const string PluginName = "Casualheim";
         public const string PluginAuthor = "k-Knight";
-        public const string PluginVersion = "1.0.1";
+        public const string PluginVersion = "1.1.0";
         public const string PluginGUID = "Casualheim";
 
         public static ConfigEntry<bool> PluginEnabled;
@@ -225,6 +231,8 @@ namespace Casualheim {
 
         public static ConfigEntry<int> PercentAttackMovement;
         public static ConfigEntry<int> PercentAttackRotation;
+        public static ConfigEntry<bool> PreventDodgeSpamming;
+
         public static ConfigEntry<int> PercentCharredTwitcher;
         public static ConfigEntry<int> PercentCharredArcher;
         public static ConfigEntry<int> PercentCharredMelee;
@@ -260,6 +268,8 @@ namespace Casualheim {
         public static ConfigEntry<float> StaminaBoostMultiplier;
         public static ConfigEntry<float> StaminaRegenBoostMultiplier;
         public static ConfigEntry<float> SpeedBoostMultiplier;
+        public static ConfigEntry<float> JumpHeightMultiplier;
+        public static ConfigEntry<float> FallWindowMultiplier;
 
 
         public static Dictionary<string, WeakReference<ConfigEntry<int>>> MaxHealthPercentDict = new Dictionary<string, WeakReference<ConfigEntry<int>>>();

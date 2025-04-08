@@ -38,8 +38,12 @@ Allows you to configure the speed of the arithmetic progression with a multiplie
 ## Enemy stars chance
 Allows to apply a multiplier to a chance the enemy will spawn with stars / have higher level (the ones that make enemies stronger).
 
-## Death penalty adjustment
+## Other gameplay changes
+### Death penalty adjustment
 Allows to configure the amount of skill loss on death. Also allows to preserve current progress to next skill level.
-
-## Pickaxe and Axe damage to resources
+### Pickaxe and Axe damage to resources
 Allows to configure the multiplier for pickaxe and axe damage they do to the resource objects like stones and trees.
+### Sneak speed
+Sneak speed now affected by sneaking skill and by player equipment.
+### Fall damage
+Fall damage is now affected by jumping skill. Also the fall window without damage is a extended by half at maximum player level.

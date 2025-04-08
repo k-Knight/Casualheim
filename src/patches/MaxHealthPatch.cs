@@ -7,7 +7,7 @@ namespace Casualheim.patches {
     [HarmonyPatch(typeof(Character), "SetMaxHealth")]
     public class MaxHealthPatch {
         public static void Prefix(Character __instance, ref float health) {
-            if (!ThisPlugin.PluginEnabled.Value || __instance == null)
+            if (!ThisPlugin.PluginEnabled.Value)
                 return;
 
             if (ZNet.instance == null || !ZNet.instance.IsServer())
