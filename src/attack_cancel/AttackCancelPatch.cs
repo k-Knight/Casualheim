@@ -1,58 +1,105 @@
 ﻿using HarmonyLib;
 using MonoMod.Utils;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
-using System.Security.Policy;
 using UnityEngine;
 
-namespace Casualheim.patches {
+namespace Casualheim.attack_cancel {
     [HarmonyPatch]
     public class AttackCancelPatch {
-        public struct BlockInputState {
-            public float block_start_time;
-            public float attack_start_time;
-            public float dodge_end_time;
+        public static bool ApplyAnimSpeedup(ref Player p) {
+            var wpn = p.GetCurrentWeapon();
+            if (wpn != null && wpn.m_shared != null && wpn.m_shared.m_name != null) {
+                string name = wpn.m_shared.m_name;
 
-            public bool block_state;
-            public bool attack_state;
-            public bool dodge_state;
-        };
+                if (name.Contains("spear"))
+                    return false;
+                else if (name.Contains("pickaxe"))
+                    return false;
+            }
 
-        public struct AttackCancel {
-            public float time;
-            public WeakReference<Attack> atk;
-        };
+            return true;
+        }
 
-        static Dictionary<int, AttackCancel> last_attack_cancel_dict = new Dictionary<int, AttackCancel>();
-        static Dictionary<int, BlockInputState> block_state_dict = new Dictionary<int, BlockInputState>();
-        static Dictionary<int, int> player_attack_damage_done_dict = new Dictionary<int, int>();
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Player), "Awake")]
+        public static void PlayerAwakePatch(ref Player __instance) {
+            if (__instance.m_zanim == null) {
+                if (ThisPlugin.DebugOutput.Value)
+                    UnityEngine.Debug.Log("Casualheim.PlayerAwakePatch | player m_zanim is null !!!");
 
-        public static void CancelFreezeFrame(ref Player __instance) {
-            if (__instance.GetNextOrCurrentAnimHash() != Humanoid.s_animatorTagAttack)
                 return;
+            }
 
             int p_hash = __instance.GetHashCode();
-
-            if (!last_attack_cancel_dict.ContainsKey(p_hash))
-                return;
-
-            Attack atk;
-            if (!last_attack_cancel_dict[p_hash].atk.TryGetTarget(out atk))
-                return;
-
-            if (ThisPlugin.DebugOutput.Value)
-                UnityEngine.Debug.Log("Casualheim.CancelFreezeFrame | cancelling");
-
-            atk.m_character.FreezeFrame(0f);
-            __instance.m_zanim.SetSpeed(10000f);
+            State.player_in_attack_frame_cached[p_hash] = MonoUpdaters.UpdateCount;
+            State.player_started_secondary[p_hash] = false;
+            State.zanim_player_dict.Add(__instance.m_zanim.GetHashCode(), new WeakReference<Player>(__instance));
         }
-        public static bool CancelAttack(ref Player __instance, float attack_min_time) {
-            if (__instance.m_currentAttack == null)
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(ZSyncAnimation), "RPC_SetTrigger")]
+        public static bool ZSyncAnimationRPC_SetTriggerPatch(ref ZSyncAnimation __instance, ref string name) {
+            if (!name.StartsWith("csca!"))
+                return true;
+
+            int hash = __instance.GetHashCode();
+            if (!State.zanim_player_dict.ContainsKey(hash))
+                return true;
+
+            Player p;
+            if (!State.zanim_player_dict[hash].TryGetTarget(out p))
+                return true;
+
+            var animator = p.m_animator;
+            var animEvent = p.m_animEvent;
+
+            animEvent.m_pauseTimer = -1f;
+
+            if (ApplyAnimSpeedup(ref p))
+                animator.speed = 1000f;
+            else
+                animator.speed = 1f;
+
+            animator.ForceStateNormalizedTime(0.99f);
+
+            //int l1_anim_hash = animator.GetCurrentAnimatorStateInfo(0).fullPathHash;
+            //int l2_anim_hash = animator.GetCurrentAnimatorStateInfo(1).fullPathHash;
+
+            //animator.Play(l1_anim_hash, 0, 0.9999f);
+            //animator.Play(l2_anim_hash, 1, 0.9999f);
+
+            return false;
+        }
+
+        public static void SkipCurrentAttackAnimation(ref Player p) {
+            if (p.GetNextAnimHash() != Humanoid.s_animatorTagAttack && p.GetCurrentAnimHash() != Humanoid.s_animatorTagAttack) {
+                if (ThisPlugin.DebugOutput.Value)
+                    UnityEngine.Debug.Log("Casualheim.SkipCurrentAttackAnimation | no animation is an attack animation !!!");
+
+                return;
+            }
+
+            p.m_nview.InvokeRPC(ZNetView.Everybody, "SetTrigger", new object[] { "csca!" });
+        }
+
+        public static bool CancelAttack(ref Player p, float attack_min_time) {
+            if (p.m_currentAttack == null)
                 return false;
 
-            float m_time = __instance.m_currentAttack.m_time;
+            Attack atk = p.m_currentAttack;
+            int p_hash = p.GetHashCode();
+            int atk_hash = atk.GetHashCode();
+            float m_time = atk.m_time;
+            bool last_cancel_contains = State.last_attack_cancel_dict.ContainsKey(p_hash);
+            bool already_cancelled = last_cancel_contains ? State.last_attack_cancel_dict[p_hash].atk == atk_hash : false;
+            bool done = false;
+
+            if (last_cancel_contains && already_cancelled) {
+                done = State.last_attack_cancel_dict[p_hash].done;
+                return true;
+            }
 
             if (m_time <= attack_min_time)
                 return false;
@@ -60,24 +107,16 @@ namespace Casualheim.patches {
             if (ThisPlugin.DebugOutput.Value)
                 UnityEngine.Debug.Log("Casualheim.CancelAttack | cancelling");
 
-            __instance.m_currentAttack.Abort();
-            __instance.m_attack = false;
-            __instance.m_attackHold = false;
-            __instance.m_secondaryAttack = false;
-            __instance.m_secondaryAttackHold = false;
-
-            __instance.m_zanim.SetSpeed(10000f);
-
-            int hash = __instance.GetHashCode();
-
-            if (!last_attack_cancel_dict.ContainsKey(hash))
-                last_attack_cancel_dict.Add(hash, new AttackCancel { time = Time.fixedTime, atk = new WeakReference<Attack>(__instance.m_currentAttack) });
-            else
-                last_attack_cancel_dict[hash] = new AttackCancel { time = Time.fixedTime, atk = new WeakReference<Attack>(__instance.m_currentAttack) };
-
-            __instance.m_currentAttack.m_character.FreezeFrame(0f);
-            __instance.m_previousAttack = null;
-            __instance.m_currentAttack = null;
+            atk.Abort();
+            SkipCurrentAttackAnimation(ref p);
+            atk.m_zanim.SetTrigger("attack_abort");
+            atk.m_zanim.SetTrigger("detach");
+            p.m_previousAttack = null;
+            State.last_attack_cancel_dict[p_hash] = new AttackCancel {
+                time = Time.fixedTime,
+                atk = atk_hash,
+                done = done
+            };
 
             return true;
         }
@@ -92,13 +131,18 @@ namespace Casualheim.patches {
                 return;
 
             Player p = __instance as Player;
-            int p_hash = p.GetHashCode();
-            int atk_hash = p.m_currentAttack.GetHashCode();
+            Attack atk = p.m_currentAttack;
 
-            if (!player_attack_damage_done_dict.ContainsKey(p_hash))
-                player_attack_damage_done_dict.Add(p_hash, atk_hash);
+            //if (atk.m_abortAttack)
+            //    return;
+
+            int p_hash = p.GetHashCode();
+            int atk_hash = atk.GetHashCode();
+
+            if (!State.player_attack_damage_done_dict.ContainsKey(p_hash))
+                State.player_attack_damage_done_dict.Add(p_hash, new DamageDone { atk = atk_hash, time = Time.fixedTime });
             else
-                player_attack_damage_done_dict[p_hash] = atk_hash;
+                State.player_attack_damage_done_dict[p_hash] = new DamageDone { atk = atk_hash, time = Time.fixedTime };
         }
 
         [HarmonyPrefix]
@@ -126,7 +170,7 @@ namespace Casualheim.patches {
 
             int p_hash = __instance.GetHashCode();
 
-            if (!block_state_dict.ContainsKey(p_hash) || (Time.fixedTime - block_state_dict[p_hash].block_start_time) > 0.1f)
+            if (!State.block_state_dict.ContainsKey(p_hash) || (Time.fixedTime - State.block_state_dict[p_hash].block_start_time) > 0.1f)
                 return true;
 
             __instance.m_queuedDodgeTimer -= dt;
@@ -142,26 +186,40 @@ namespace Casualheim.patches {
             int p_hash = __instance.GetHashCode();
             float time = Time.fixedTime;
 
-            if (last_attack_cancel_dict.ContainsKey(p_hash)) {
-                float delta = time - last_attack_cancel_dict[p_hash].time;
+            if (State.player_in_attack_frame_cached[p_hash] == MonoUpdaters.UpdateCount)
+                return;
+
+            DamageDone damageDone;
+            bool damage_done_long_ago = false;
+            bool same_attack = false;
+            if (State.player_attack_damage_done_dict.TryGetValue(p_hash, out damageDone) && __instance.m_currentAttack != null) {
+                same_attack = damageDone.atk == __instance.m_currentAttack.GetHashCode();
+                damage_done_long_ago = (time - damageDone.time) > 1.5f;
+            }
+
+            if (State.last_attack_cancel_dict.ContainsKey(p_hash) && !(State.last_attack_cancel_dict[p_hash].done)) {
+                float delta = time - State.last_attack_cancel_dict[p_hash].time;
 
                 if (delta < 0.1f) {
                     if (ThisPlugin.DebugOutput.Value)
-                        UnityEngine.Debug.Log("Casualheim | (in attack) attack canceled recently :: " + delta + "s");
+                        UnityEngine.Debug.Log("Casualheim | (in attack) attack canceled recently :: " + delta + "s  ---  " + MonoUpdaters.UpdateCount);
 
-                    CancelFreezeFrame(ref __instance);
+                    SkipCurrentAttackAnimation(ref __instance);
                     __result = false;
+                    __instance.m_cachedAttack = __result;
+                    State.player_in_attack_frame_cached[p_hash] = MonoUpdaters.UpdateCount;
 
                     return;
+                }
+                else {
+                    var atk_cancel = State.last_attack_cancel_dict[p_hash];
+                    atk_cancel.done = true;
+                    State.last_attack_cancel_dict[p_hash] = atk_cancel;
                 }
             }
 
             if (__instance.m_currentAttack == null)
                 return;
-
-            if (player_attack_damage_done_dict.ContainsKey(p_hash) && player_attack_damage_done_dict[p_hash] == __instance.m_currentAttack.GetHashCode())
-                return;
-
 
             bool attack_finished = (__instance.m_currentAttack == null) || (__instance.m_currentAttack.IsDone());
             StackFrame[] frames = new StackTrace(fNeedFileInfo: true).GetFrames();
@@ -190,11 +248,11 @@ namespace Casualheim.patches {
                 if (decl_type == typeof(Humanoid) && name.Contains("UpdateBlock")) {
                     bool block_just_began = false;
 
-                    if (!block_state_dict.ContainsKey(p_hash))
+                    if (!State.block_state_dict.ContainsKey(p_hash))
                         block_just_began = true;
 
                     if (!block_just_began) {
-                        BlockInputState bs = block_state_dict[p_hash];
+                        BlockInputState bs = State.block_state_dict[p_hash];
                         if (bs.attack_start_time < bs.block_start_time)
                             block_just_began = true;
                     }
@@ -202,7 +260,11 @@ namespace Casualheim.patches {
                     if (block_just_began) {
                         cancel_attack = true;
                         trying_to_block = true;
-                        attack_min_time = 0f;
+                        //if (State.player_started_secondary[p_hash])
+                        //    attack_min_time = 0.2f;
+                        //else
+                            attack_min_time = 0.1f;
+
                     }
 
                     break;
@@ -220,21 +282,27 @@ namespace Casualheim.patches {
                 }
             }
 
-            if (!cancel_attack || attack_finished)
+            if (same_attack && !damage_done_long_ago && !trying_to_block)
+                return;
+
+            if (!cancel_attack || (attack_finished && !damage_done_long_ago))
                 return;
 
             __instance.ClearActionQueue();
             __result = !CancelAttack(ref __instance, attack_min_time);
+            __instance.m_cachedAttack = __result;
 
             if (!__result && trying_to_block) {
                 __instance.m_nview.GetZDO().Set(ZDOVars.s_isBlockingHash, true);
                 __instance.m_zanim.SetBool(Humanoid.s_blocking, true);
             }
+
+            State.player_in_attack_frame_cached[p_hash] = MonoUpdaters.UpdateCount;
         }
 
         [HarmonyPrefix]
         [HarmonyPatch(typeof(Humanoid), "StartAttack")]
-        public static bool HumanoidStartAttackCancelPatch(Humanoid __instance, ref bool __result) {
+        public static bool HumanoidStartAttackCancelPatch_Prefix(Humanoid __instance, ref bool __result) {
             if (!ThisPlugin.PluginEnabled.Value)
                 return true;
 
@@ -245,9 +313,9 @@ namespace Casualheim.patches {
             int p_hash = p.GetHashCode();
             float time = Time.fixedTime;
 
-            if (last_attack_cancel_dict.ContainsKey(p_hash)) {
-                float delta = time - last_attack_cancel_dict[p_hash].time;
-                if (delta < 0.1f) {
+            if (State.last_attack_cancel_dict.ContainsKey(p_hash)) {
+                float delta = time - State.last_attack_cancel_dict[p_hash].time;
+                if (delta < 0.5f) {
                     if (ThisPlugin.DebugOutput.Value)
                         UnityEngine.Debug.Log("Casualheim.HumanoidStartAttackCancelPatch | attack canceled recently :: " + delta + "s");
 
@@ -255,8 +323,8 @@ namespace Casualheim.patches {
                     return false;
                 }
             }
-            else if (block_state_dict.ContainsKey(p_hash)) {
-                BlockInputState bs = block_state_dict[p_hash];
+            else if (State.block_state_dict.ContainsKey(p_hash)) {
+                BlockInputState bs = State.block_state_dict[p_hash];
 
                 if ((bs.block_state && bs.block_start_time > bs.attack_start_time) || bs.dodge_state || (time - bs.dodge_end_time < 0.15f) || bs.attack_state == false) {
                     if (ThisPlugin.DebugOutput.Value)
@@ -267,7 +335,16 @@ namespace Casualheim.patches {
                 }
             }
 
+            if (ThisPlugin.DebugOutput.Value)
+                UnityEngine.Debug.Log("Casualheim.HumanoidStartAttackCancelPatch | starting attack ...");
             return true;
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Humanoid), "StartAttack")]
+        public static void HumanoidStartAttackCancelPatch_Postfix(Humanoid __instance, ref bool __result, ref bool secondaryAttack) {
+            if (__result && __instance.IsPlayer())
+                State.player_started_secondary[(__instance as Player).GetHashCode()] = secondaryAttack;
         }
 
         [HarmonyPrefix]
@@ -285,12 +362,12 @@ namespace Casualheim.patches {
             float dodge_end_time;
             float time = Time.fixedTime;
 
-            if (!block_state_dict.ContainsKey(p_hash)) {
+            if (!State.block_state_dict.ContainsKey(p_hash)) {
                 block_start_time = block_state ? time : -2f;
                 dodge_end_time = doldge_state ? time : -2f;
                 attack_start_time = attack_state ? time : -1f;
 
-                block_state_dict.Add(p_hash, new BlockInputState {
+                State.block_state_dict.Add(p_hash, new BlockInputState {
                     block_state = block_state,
                     block_start_time = block_start_time,
 
@@ -302,12 +379,12 @@ namespace Casualheim.patches {
                 });
             }
             else {
-                BlockInputState bs = block_state_dict[p_hash];
+                BlockInputState bs = State.block_state_dict[p_hash];
                 block_start_time = (!bs.block_state && block_state) ? time : bs.block_start_time;
                 attack_start_time = (!bs.attack_state && attack_state) ? time : bs.attack_start_time;
                 dodge_end_time = (!doldge_state) ? bs.dodge_end_time : time;
 
-                block_state_dict[p_hash] = new BlockInputState {
+                State.block_state_dict[p_hash] = new BlockInputState {
                     block_state = block_state,
                     block_start_time = block_start_time,
 
@@ -331,10 +408,10 @@ namespace Casualheim.patches {
                 return;
             }
 
-            if (!last_attack_cancel_dict.ContainsKey(p_hash))
+            if (!State.last_attack_cancel_dict.ContainsKey(p_hash))
                 return;
 
-            float delta = Time.fixedTime - last_attack_cancel_dict[p_hash].time;
+            float delta = Time.fixedTime - State.last_attack_cancel_dict[p_hash].time;
             if (delta >= 0.1f)
                 return;
 

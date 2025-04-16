@@ -127,13 +127,15 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="src\attack_cancel\State.cs" />
+    <Compile Include="src\attack_cancel\AttackPreventLogicPatch.cs" />
     <Compile Include="src\gui\LevelIndicatorPatch.cs" />
     <Compile Include="src\leveling\DisableBetterUIXPPatch.cs" />
     <Compile Include="src\leveling\Level.cs" />
     <Compile Include="src\leveling\LevelPatch.cs" />
     <Compile Include="src\leveling\StatModificationPatch.cs" />
     <Compile Include="src\patches\AllowClearedBuildingPatch.cs" />
-    <Compile Include="src\patches\AttackCancelPatch.cs" />
+    <Compile Include="src\attack_cancel\AttackCancelPatch.cs" />
     <Compile Include="src\patches\DeathPenaltyPatch.cs" />
     <Compile Include="src\patches\EnemyLevelChancePatch.cs" />
     <Compile Include="src\patches\MaxHealthPatch.cs" />

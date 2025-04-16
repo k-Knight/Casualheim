@@ -20,3 +20,5 @@
 > - improved detection of unit spawning within locations
 > - extended leveling system
 > - buffed jump and sneak skills a little
+> ### v1.1.1
+> - bug fix for attack animation cancellation, this one took quite a long time

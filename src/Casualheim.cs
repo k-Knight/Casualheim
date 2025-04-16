@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace Casualheim {
-    [BepInPlugin("Casualheim", "Casualheim", "1.1.0")]
+    [BepInPlugin("Casualheim", "Casualheim", "1.1.1")]
     [BepInProcess("valheim.exe")]
     [BepInDependency("MK_BetterUI", BepInDependency.DependencyFlags.SoftDependency)]
     public class ThisPlugin : BaseUnityPlugin {
@@ -31,7 +31,6 @@ namespace Casualheim {
 
                 // gameplay patches
                 harmony_instance.PatchAll(typeof(patches.AllowClearedBuildingPatch));
-                harmony_instance.PatchAll(typeof(patches.AttackCancelPatch));
                 harmony_instance.PatchAll(typeof(patches.AttackSlowdownPatch));
                 harmony_instance.PatchAll(typeof(patches.DeathPenaltyPatch));
                 harmony_instance.PatchAll(typeof(patches.EnemyLevelChancePatch));
@@ -39,6 +38,10 @@ namespace Casualheim {
                 harmony_instance.PatchAll(typeof(patches.RegenPatch));
                 harmony_instance.PatchAll(typeof(patches.SkillCurvePatch));
                 harmony_instance.PatchAll(typeof(patches.MiningChoppingPatch));
+
+                // attack cancel patches
+                harmony_instance.PatchAll(typeof(attack_cancel.AttackCancelPatch));
+                harmony_instance.PatchAll(typeof(attack_cancel.AttackPreventLogicPatch));
 
                 // leveling patches
                 harmony_instance.PatchAll(typeof(leveling.LevelPatch));
@@ -213,7 +216,7 @@ namespace Casualheim {
 
         public const string PluginName = "Casualheim";
         public const string PluginAuthor = "k-Knight";
-        public const string PluginVersion = "1.1.0";
+        public const string PluginVersion = "1.1.1";
         public const string PluginGUID = "Casualheim";
 
         public static ConfigEntry<bool> PluginEnabled;
