@@ -6,7 +6,7 @@ namespace Casualheim.patches {
         [HarmonyPostfix]
         [HarmonyPatch(typeof(Humanoid), "GetAttackSpeedFactorMovement")]
         public static void AttackMovementSpeedPatch(Humanoid __instance, ref float __result) {
-            if (!ThisPlugin.PluginEnabled.Value)
+            if (!ThisPlugin.PluginEnabled.Value || !ThisPlugin.EnableAttackMod.Value)
                 return;
 
             if (__result < 0.99f && __instance.GetType() == typeof(Player) && ThisPlugin.PluginEnabled.Value) {
@@ -17,7 +17,7 @@ namespace Casualheim.patches {
         [HarmonyPostfix]
         [HarmonyPatch(typeof(Humanoid), "GetAttackSpeedFactorRotation")]
         public static void AttackRotationSpeedPatch(Humanoid __instance, ref float __result) {
-            if (!ThisPlugin.PluginEnabled.Value)
+            if (!ThisPlugin.PluginEnabled.Value || !ThisPlugin.EnableAttackMod.Value)
                 return;
 
             if (__result < 0.99f && __instance.GetType() == typeof(Player) && ThisPlugin.PluginEnabled.Value) {

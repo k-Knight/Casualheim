@@ -13,7 +13,10 @@ namespace Casualheim.patches {
             if (ZNet.instance == null || !ZNet.instance.IsServer())
                 return;
 
-            if (__instance.IsBoss() && Player.GetAllPlayers().Count > ThisPlugin.NumberOfPlayersMax.Value)
+            if (__instance.IsBoss() && (Player.GetAllPlayers().Count > ThisPlugin.NumberOfPlayersMax.Value || !ThisPlugin.EnableBossHealthRegenMod.Value))
+                return;
+
+            if (!__instance.IsBoss() && !ThisPlugin.EnableEnemyHealthMod.Value)
                 return;
 
             const string enemy_tag = "$enemy_";

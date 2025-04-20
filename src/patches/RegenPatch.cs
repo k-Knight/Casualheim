@@ -7,7 +7,7 @@ namespace Casualheim.patches {
     [HarmonyPatch(typeof(Character), "Heal")]
     public class RegenPatch {
         public static void Prefix(Character __instance, ref float hp) {
-            if (!ThisPlugin.PluginEnabled.Value)
+            if (!ThisPlugin.PluginEnabled.Value || !ThisPlugin.EnableBossHealthRegenMod.Value)
                 return;
 
             if (ZNet.instance == null || !ZNet.instance.IsServer())

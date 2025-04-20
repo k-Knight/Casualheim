@@ -5,7 +5,7 @@ namespace Casualheim.patches {
     [HarmonyPatch(typeof(Skills), "LowerAllSkills")]
     public class DeathPenaltyPatch {
         public static bool Prefix(ref Skills __instance, ref float factor) {
-            if (!ThisPlugin.PluginEnabled.Value)
+            if (!ThisPlugin.PluginEnabled.Value || !ThisPlugin.EnableDeathPenaltyMod.Value)
                 return true;
 
             factor *= ThisPlugin.DeathPenaltyMultiplier.Value;

@@ -1,4 +1,6 @@
 > # Update Information (Latest listed first)
+> ### v1.1.2
+> - added configuration options to individually turn on/off the functionality
 > ### v1.1.1
 > - bug fix for attack animation cancellation, this one took quite a long time
 > ### v1.1.0

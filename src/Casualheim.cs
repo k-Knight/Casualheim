@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace Casualheim {
-    [BepInPlugin("Casualheim", "Casualheim", "1.1.1")]
+    [BepInPlugin("Casualheim", "Casualheim", "1.1.2")]
     [BepInProcess("valheim.exe")]
     [BepInDependency("MK_BetterUI", BepInDependency.DependencyFlags.SoftDependency)]
     public class ThisPlugin : BaseUnityPlugin {
@@ -56,9 +56,6 @@ namespace Casualheim {
                 // gui things
                 harmony_instance.PatchAll(typeof(gui.LevelIndicatorPatch));
             }
-
-            if (DebugOutput.Value)
-                DumpConfiguration();
         }
 
         public static ThisPlugin instance {
@@ -106,50 +103,54 @@ namespace Casualheim {
         public static void LoadSettings() {
             PluginEnabled = instance.Config.Bind("General", "Enabled", true, "Enable/disable this pulgin.");
             DebugOutput = instance.Config.Bind("General", "Debug", false, "Enable/disable debug logging.");
-            NumberOfPlayersMax = instance.Config.Bind("General", "NumberOfPlayersMax", 4, "Maximum number of active players to modify boss health and regen.");
-            EnemyLevelChanceMultiplier = instance.Config.Bind("General", "EnemyLevelChanceMultiplier", 3f, "My how much the chance of leveling up enemy (stars) is multiplied.");
-            AllowClearedBuilding = instance.Config.Bind("General", "AllowClearedDungeonBuilding", true, "Allow building in dungeons/locations when all enemies are dead. May require a new world (kinda).");
-            ChopMineDamageMultiplier = instance.Config.Bind("General", "ChopMineDamageMultiplier", 2f, "Multiplies the damage of chopping and mining (0 for disable).");
+            NumberOfPlayersMax = instance.Config.Bind("General", "Number of players max", 4, "Maximum number of active players to modify boss health and regen.");
+            EnemyLevelChanceMultiplier = instance.Config.Bind("General", "Enemy level chance multiplier", 3f, "My how much the chance of leveling up enemy (stars) is multiplied (1.0 for default values).");
+            AllowClearedBuilding = instance.Config.Bind("General", "Allow cleared dungeon building", true, "Allow building in dungeons/locations when all enemies are dead. May require a new world (kinda).");
+            ChopMineDamageMultiplier = instance.Config.Bind("General", "Multiplier for chop/mine damage", 2f, "Multiplies the damage of chopping and mining (0 for disable).");
 
-            EasierSkillCurveEnabled = instance.Config.Bind("Skills", "EasierSkillCurveEnabled", true, "Whether to enable easier skill curve.");
-            RequiredExpMultiplier = instance.Config.Bind("Skills", "RequiredExpMultiplier", 1f, "This changes the speed of arithmetic progression in required experience to reach next skill level.");
-            DeathPenaltyMultiplier = instance.Config.Bind("Skills", "DeathPenaltyMultiplier", 0f, "This changes the amount of skill loss by multiplying it with this value.");
-            EnableSkillLevelProgressLoss = instance.Config.Bind("Skills", "EnableSkillLevelProgressLoss", false, "Whether to reset the accumulated experience on the current skill level.");
+            EasierSkillCurveEnabled = instance.Config.Bind("Skills", "Enable easier skill curve", true, "Enables/Disables easier skill curve.");
+            RequiredExpMultiplier = instance.Config.Bind("Skills", "Required exp multiplier", 1f, "This changes the speed of arithmetic progression in required experience to reach next skill level.");
+            EnableDeathPenaltyMod = instance.Config.Bind("Skills", "Enable death penalty changes", true, "Enables/Disables modifications of death penalty.");
+            DeathPenaltyMultiplier = instance.Config.Bind("Skills", "Death penalty multiplier", 0f, "This changes the amount of skill loss by multiplying it with this value.");
+            EnableSkillLevelProgressLoss = instance.Config.Bind("Skills", "Enable skill level progress loss", false, "Whether to reset the accumulated experience on the current skill level.");
 
-            PercentAttackMovement = instance.Config.Bind("Attacks", "PercentAttackMovementSpeed", 20, "Percent of normal movement speed that remains while attacking.");
-            PercentAttackRotation = instance.Config.Bind("Attacks", "PercentAttackRotationSpeed", 20, "Percent of normal rotation speed that remains while attacking.");
-            PreventDodgeSpamming = instance.Config.Bind("Attacks", "PreventDodgeSpamming", false, "Prevent dodge spamming if player continiously holds down the dodge key.");
+            EnableAttackMod = instance.Config.Bind("Attacks", "Enable attack changes", true, "Enables/Disables attack cancellation and other related things.");
+            PercentAttackMovement = instance.Config.Bind("Attacks", "Percent attack movement speed", 20, "Percent of normal movement speed that remains while attacking (20% is game's default).");
+            PercentAttackRotation = instance.Config.Bind("Attacks", "Percent attack rotation speed", 20, "Percent of normal rotation speed that remains while attacking (20% is game's default).");
+            PreventDodgeSpamming = instance.Config.Bind("Attacks", "Prevent dodge spamming", false, "Prevent dodge spamming if player continiously holds down the dodge key.");
 
-            PercentCharredTwitcher = instance.Config.Bind("MobHealth", "PercentCharredTwitcherHealth", 100, "Percent of normal health that Charred Twitcher will have.");
-            PercentCharredArcher = instance.Config.Bind("MobHealth", "PercentCharredArcherHealth", 100, "Percent of normal health that Charred Marksman will have.");
-            PercentCharredMelee = instance.Config.Bind("MobHealth", "PercentCharredMeleeHealth", 66, "Percent of normal health that Charred Warrior will have.");
-            PercentCharredMage = instance.Config.Bind("MobHealth", "PercentCharredMageHealth", 66, "Percent of normal health that Charred Warlock will have.");
-            PercentCharredTwitcherSummoned = instance.Config.Bind("MobHealth", "PercentCharredTwitcherSummonedHealth", 100, "Percent of normal health that Summoned Twitcher will have.");
-            PercentFallenValkyrie = instance.Config.Bind("MobHealth", "PercentFallenValkyrieHealth", 50, "Percent of normal health that Fallen Valkyrie will have.");
-            PercentBonemawSerpent = instance.Config.Bind("MobHealth", "PercentBonemawSerpentHealth", 50, "Percent of normal health that Bonemaw Serpent will have.");
-            PercentMorgen = instance.Config.Bind("MobHealth", "PercentMorgenHealth", 50, "Percent of normal health that Morgen will have.");
-            PercentVolture = instance.Config.Bind("MobHealth", "PercentVoltureHealth", 100, "Percent of normal health that Volture will have.");
-            PercentPieceCharredBalista = instance.Config.Bind("MobHealth", "PercentPieceCharredBalistaHealth", 100, "Percent of normal health that Skugg will have.");
-            PercentBlobLava = instance.Config.Bind("MobHealth", "PercentBlobLavaHealth", 100, "Percent of normal health that Lava Blob will have.");
-            PercentDvergerAshlands = instance.Config.Bind("MobHealth", "PercentDvergerAshlandsHealth", 100, "Percent of normal health that Ashlands Dvergr will have.");
+            EnableEnemyHealthMod = instance.Config.Bind("Mob Health", "Enable enemy health change", true, "Enables/Disables the change of enemies' max health.");
+            PercentCharredTwitcher = instance.Config.Bind("Mob Health", "Percent Charred Twitcher health", 100, "Percent of normal health that Charred Twitcher will have.");
+            PercentCharredArcher = instance.Config.Bind("Mob Health", "Percent CharredArcher health", 100, "Percent of normal health that Charred Marksman will have.");
+            PercentCharredMelee = instance.Config.Bind("Mob Health", "Percent CharredMelee health", 66, "Percent of normal health that Charred Warrior will have.");
+            PercentCharredMage = instance.Config.Bind("Mob Health", "Percent CharredMage health", 66, "Percent of normal health that Charred Warlock will have.");
+            PercentCharredTwitcherSummoned = instance.Config.Bind("Mob Health", "Percent CharredTwitcherSummoned health", 100, "Percent of normal health that Summoned Twitcher will have.");
+            PercentFallenValkyrie = instance.Config.Bind("Mob Health", "Percent FallenValkyrie health", 50, "Percent of normal health that Fallen Valkyrie will have.");
+            PercentBonemawSerpent = instance.Config.Bind("Mob Health", "Percent BonemawSerpent health", 50, "Percent of normal health that Bonemaw Serpent will have.");
+            PercentMorgen = instance.Config.Bind("Mob Health", "Percent Morgen health", 50, "Percent of normal health that Morgen will have.");
+            PercentVolture = instance.Config.Bind("Mob Health", "Percent Volture health", 100, "Percent of normal health that Volture will have.");
+            PercentPieceCharredBalista = instance.Config.Bind("Mob Health", "Percent PieceCharredBalista health", 100, "Percent of normal health that Skugg will have.");
+            PercentBlobLava = instance.Config.Bind("Mob Health", "Percent BlobLava health", 100, "Percent of normal health that Lava Blob will have.");
+            PercentDvergerAshlands = instance.Config.Bind("Mob Health", "Percent DvergerAshlands health", 100, "Percent of normal health that Ashlands Dvergr will have.");
 
-            PercentRegenEikthyr = instance.Config.Bind("Boss Health", "PercentRegenEikthyr", 0, "Percent of normal Eikthyr health regen.");
-            PercentRegenElder = instance.Config.Bind("Boss Health", "PercentRegenElder", 0, "Percent of normal Elder health regen.");
-            PercentRegenBonemass = instance.Config.Bind("Boss Health", "PercentRegenBonemass", 0, "Percent of normal Bonemass health regen.");
-            PercentRegenModer = instance.Config.Bind("Boss Health", "PercentRegenModer", 0, "Percent of normal Moder health regen.");
-            PercentRegenYagluth = instance.Config.Bind("Boss Health", "PercentRegenYagluth", 0, "Percent of normal Yagluth health regen.");
-            PercentRegenQueen = instance.Config.Bind("Boss Health", "PercentRegenQueen", 0, "Percent of normal Queen health regen.");
-            PercentRegenFader = instance.Config.Bind("Boss Health", "PercentRegenFader", 0, "Percent of normal Fader health regen.");
+            EnableBossHealthRegenMod = instance.Config.Bind("Boss Health", "Enable boss health change", true, "Enables/Disables the change of boss max health and regen.");
+            PercentRegenEikthyr = instance.Config.Bind("Boss Health", "Percent regen Eikthyr", 0, "Percent of normal Eikthyr health regen.");
+            PercentRegenElder = instance.Config.Bind("Boss Health", "Percent regen Elder", 0, "Percent of normal Elder health regen.");
+            PercentRegenBonemass = instance.Config.Bind("Boss Health", "Percent regen Bonemass", 0, "Percent of normal Bonemass health regen.");
+            PercentRegenModer = instance.Config.Bind("Boss Health", "Percent regen Moder", 0, "Percent of normal Moder health regen.");
+            PercentRegenYagluth = instance.Config.Bind("Boss Health", "Percent regen Yagluth", 0, "Percent of normal Yagluth health regen.");
+            PercentRegenQueen = instance.Config.Bind("Boss Health", "Percent regen Queen", 0, "Percent of normal Queen health regen.");
+            PercentRegenFader = instance.Config.Bind("Boss Health", "Percent regen Fader", 0, "Percent of normal Fader health regen.");
 
-            PercentHealthEikthyr = instance.Config.Bind("Boss Health", "PercentHealthEikthyr", 150, "Percent of normal Eikthyr max health.");
-            PercentHealthElder = instance.Config.Bind("Boss Health", "PercentHealthElder", 100, "Percent of normal Elder max health.");
-            PercentHealthBonemass = instance.Config.Bind("Boss Health", "PercentHealthBonemass", 100, "Percent of normal Bonemass max health.");
-            PercentHealthModer = instance.Config.Bind("Boss Health", "PercentHealthModer", 100, "Percent of normal Moder max health.");
-            PercentHealthYagluth = instance.Config.Bind("Boss Health", "PercentHealthYagluth", 100, "Percent of normal Yagluth max health.");
-            PercentHealthQueen = instance.Config.Bind("Boss Health", "PercentHealthQueen", 100, "Percent of normal Queen max health.");
-            PercentHealthFader = instance.Config.Bind("Boss Health", "PercentHealthFader", 60, "Percent of normal Fader max health.");
+            PercentHealthEikthyr = instance.Config.Bind("Boss Health", "Percent health Eikthyr", 150, "Percent of normal Eikthyr max health.");
+            PercentHealthElder = instance.Config.Bind("Boss Health", "Percent health Elder", 100, "Percent of normal Elder max health.");
+            PercentHealthBonemass = instance.Config.Bind("Boss Health", "Percent health Bonemass", 100, "Percent of normal Bonemass max health.");
+            PercentHealthModer = instance.Config.Bind("Boss Health", "Percent health Moder", 100, "Percent of normal Moder max health.");
+            PercentHealthYagluth = instance.Config.Bind("Boss Health", "Percent health Yagluth", 100, "Percent of normal Yagluth max health.");
+            PercentHealthQueen = instance.Config.Bind("Boss Health", "Percent health Queen", 100, "Percent of normal Queen max health.");
+            PercentHealthFader = instance.Config.Bind("Boss Health", "Percent health Fader", 60, "Percent of normal Fader max health.");
 
-            EnableLeveling = instance.Config.Bind("Leveling", "Enable Leveling System", true, "Enables/Disables the leveling system");
+            EnableLeveling = instance.Config.Bind("Leveling", "Enable leveling system", true, "Enables/Disables the leveling system");
             HealthBoostMultiplier = instance.Config.Bind("Leveling", "Health boost strength multiplier", 1f, "Changes the strength of the health boost (0 for disable).");
             HealthRegenBoostMultiplier = instance.Config.Bind("Leveling", "Health regen boost strength multiplier", 1f, "Changes the strength of the health regeneration boost (0 for disable).");
             StaminaBoostMultiplier = instance.Config.Bind("Leveling", "Stamina boost strength multiplier", 1f, "Changes the strength of the stamina boost (0 for disable).");
@@ -159,64 +160,9 @@ namespace Casualheim {
             FallWindowMultiplier = instance.Config.Bind("Leveling", "Allowed fall window increase multiplier", 1f, "Changes the strength of allowed fall window increase where player does not receive fall damage (0 for disable).");
         }
 
-        public static void DumpConfiguration() {
-            Debug.Log("------------ Casualheim CFG START ------------");
-
-            if (ZNet.instance != null)
-                Debug.Log("Casualheim,IsServer," + ZNet.instance.IsServer());
-
-            Debug.Log("Casualheim.GetAllPlayers," + Player.GetAllPlayers().Count);
-            Debug.Log("Casualheim.NumberOfPlayersMax," + NumberOfPlayersMax.Value);
-            Debug.Log("Casualheim.AllowClearedBuilding," + AllowClearedBuilding.Value);
-            Debug.Log("Casualheim.ChopMineDamageMultiplier," + ChopMineDamageMultiplier.Value);
-            Debug.Log("Casualheim.EasierSkillCurveEnabled," + EasierSkillCurveEnabled.Value);
-            Debug.Log("Casualheim.RequiredExpMultiplier," + RequiredExpMultiplier.Value);
-            Debug.Log("Casualheim.DeathPenaltyMultiplier," + DeathPenaltyMultiplier.Value);
-            Debug.Log("Casualheim.EnableSkillLevelProgressLoss," + EnableSkillLevelProgressLoss.Value);
-            Debug.Log("Casualheim.PercentAttackMovement," + PercentAttackMovement.Value);
-            Debug.Log("Casualheim.PercentAttackRotation," + PercentAttackRotation.Value);
-            Debug.Log("Casualheim.PreventDodgeSpamming," + PreventDodgeSpamming.Value);
-            Debug.Log("Casualheim.PercentCharredTwitcher," + PercentCharredTwitcher.Value);
-            Debug.Log("Casualheim.PercentCharredArcher," + PercentCharredArcher.Value);
-            Debug.Log("Casualheim.PercentCharredMelee," + PercentCharredMelee.Value);
-            Debug.Log("Casualheim.PercentCharredMage," + PercentCharredMage.Value);
-            Debug.Log("Casualheim.PercentCharredTwitcherSummoned," + PercentCharredTwitcherSummoned.Value);
-            Debug.Log("Casualheim.PercentFallenValkyrie," + PercentFallenValkyrie.Value);
-            Debug.Log("Casualheim.PercentBonemawSerpent," + PercentBonemawSerpent.Value);
-            Debug.Log("Casualheim.PercentMorgen," + PercentMorgen.Value);
-            Debug.Log("Casualheim.PercentVolture," + PercentVolture.Value);
-            Debug.Log("Casualheim.PercentPieceCharredBalista," + PercentPieceCharredBalista.Value);
-            Debug.Log("Casualheim.PercentBlobLava," + PercentBlobLava.Value);
-            Debug.Log("Casualheim.PercentDvergerAshlands," + PercentDvergerAshlands.Value);
-            Debug.Log("Casualheim.PercentRegenEikthyr," + PercentRegenEikthyr.Value);
-            Debug.Log("Casualheim.PercentRegenElder," + PercentRegenElder.Value);
-            Debug.Log("Casualheim.PercentRegenBonemass," + PercentRegenBonemass.Value);
-            Debug.Log("Casualheim.PercentRegenModer," + PercentRegenModer.Value);
-            Debug.Log("Casualheim.PercentRegenYagluth," + PercentRegenYagluth.Value);
-            Debug.Log("Casualheim.PercentRegenQueen," + PercentRegenQueen.Value);
-            Debug.Log("Casualheim.PercentRegenFader," + PercentRegenFader.Value);
-            Debug.Log("Casualheim.PercentHealthEikthyr," + PercentHealthEikthyr.Value);
-            Debug.Log("Casualheim.PercentHealthElder," + PercentHealthElder.Value);
-            Debug.Log("Casualheim.PercentHealthBonemass," + PercentHealthBonemass.Value);
-            Debug.Log("Casualheim.PercentHealthModer," + PercentHealthModer.Value);
-            Debug.Log("Casualheim.PercentHealthYagluth," + PercentHealthYagluth.Value);
-            Debug.Log("Casualheim.PercentHealthQueen," + PercentHealthQueen.Value);
-            Debug.Log("Casualheim.PercentHealthFader," + PercentHealthFader.Value);
-            Debug.Log("Casualheim.EnableLeveling," + EnableLeveling.Value);
-            Debug.Log("Casualheim.HealthBoostMultiplier," + HealthBoostMultiplier.Value);
-            Debug.Log("Casualheim.HealthRegenMultiplier," + HealthRegenBoostMultiplier.Value);
-            Debug.Log("Casualheim.StaminaBoostMultiplier," + StaminaBoostMultiplier.Value);
-            Debug.Log("Casualheim.StaminaRegenBoostMultiplier," + StaminaRegenBoostMultiplier.Value);
-            Debug.Log("Casualheim.SpeedBoostMultiplier," + SpeedBoostMultiplier.Value);
-            Debug.Log("Casualheim.JumpHeightMultiplier," + JumpHeightMultiplier.Value);
-            Debug.Log("Casualheim.FallWindowMultiplier," + FallWindowMultiplier.Value);
-
-            Debug.Log("------------- Casualheim CFG END -------------");
-        }
-
         public const string PluginName = "Casualheim";
         public const string PluginAuthor = "k-Knight";
-        public const string PluginVersion = "1.1.1";
+        public const string PluginVersion = "1.1.2";
         public const string PluginGUID = "Casualheim";
 
         public static ConfigEntry<bool> PluginEnabled;
@@ -227,15 +173,18 @@ namespace Casualheim {
 
         public static ConfigEntry<bool> EasierSkillCurveEnabled;
         public static ConfigEntry<float> RequiredExpMultiplier;
+        public static ConfigEntry<bool> EnableDeathPenaltyMod;
         public static ConfigEntry<float> DeathPenaltyMultiplier;
         public static ConfigEntry<bool> EnableSkillLevelProgressLoss;
 
         public static ConfigEntry<float> EnemyLevelChanceMultiplier;
 
+        public static ConfigEntry<bool> EnableAttackMod;
         public static ConfigEntry<int> PercentAttackMovement;
         public static ConfigEntry<int> PercentAttackRotation;
         public static ConfigEntry<bool> PreventDodgeSpamming;
 
+        public static ConfigEntry<bool> EnableEnemyHealthMod;
         public static ConfigEntry<int> PercentCharredTwitcher;
         public static ConfigEntry<int> PercentCharredArcher;
         public static ConfigEntry<int> PercentCharredMelee;
@@ -249,6 +198,7 @@ namespace Casualheim {
         public static ConfigEntry<int> PercentBlobLava;
         public static ConfigEntry<int> PercentDvergerAshlands;
 
+        public static ConfigEntry<bool> EnableBossHealthRegenMod;
         public static ConfigEntry<int> RegenerationMultiplier;
         public static ConfigEntry<int> PercentRegenEikthyr;
         public static ConfigEntry<int> PercentRegenElder;

@@ -124,7 +124,7 @@ namespace Casualheim.attack_cancel {
         [HarmonyPostfix]
         [HarmonyPatch(typeof(Humanoid), "OnAttackTrigger")]
         public static void HumanoidOnAttackTriggerPatch(Humanoid __instance) {
-            if (!ThisPlugin.PluginEnabled.Value)
+            if (!ThisPlugin.PluginEnabled.Value || !ThisPlugin.EnableAttackMod.Value)
                 return;
 
             if (__instance.GetType() != typeof(Player) || __instance.m_currentAttack == null)
@@ -162,7 +162,7 @@ namespace Casualheim.attack_cancel {
         [HarmonyPrefix]
         [HarmonyPatch(typeof(Player), "UpdateDodge")]
         public static bool PlayerUpdateDodgePatch(Player __instance, ref float dt) {
-            if (!ThisPlugin.PluginEnabled.Value)
+            if (!ThisPlugin.PluginEnabled.Value || !ThisPlugin.EnableAttackMod.Value)
                 return true;
 
             if (__instance.InDodge())
@@ -180,7 +180,7 @@ namespace Casualheim.attack_cancel {
         [HarmonyPostfix]
         [HarmonyPatch(typeof(Player), "InAttack")]
         public static void PlayerInAttackCancelPatch(Player __instance, ref bool __result) {
-            if (!ThisPlugin.PluginEnabled.Value)
+            if (!ThisPlugin.PluginEnabled.Value || !ThisPlugin.EnableAttackMod.Value)
                 return;
 
             int p_hash = __instance.GetHashCode();
@@ -303,7 +303,7 @@ namespace Casualheim.attack_cancel {
         [HarmonyPrefix]
         [HarmonyPatch(typeof(Humanoid), "StartAttack")]
         public static bool HumanoidStartAttackCancelPatch_Prefix(Humanoid __instance, ref bool __result) {
-            if (!ThisPlugin.PluginEnabled.Value)
+            if (!ThisPlugin.PluginEnabled.Value || !ThisPlugin.EnableAttackMod.Value)
                 return true;
 
             if (__instance.GetType() != typeof(Player))
@@ -350,7 +350,7 @@ namespace Casualheim.attack_cancel {
         [HarmonyPrefix]
         [HarmonyPatch(typeof(Player), "SetControls")]
         public static void PlayerSetControlsPatch(Player __instance, ref bool attack, ref bool attackHold, ref bool secondaryAttack, ref bool secondaryAttackHold, ref bool block, ref bool blockHold, ref bool dodge) {
-            if (!ThisPlugin.PluginEnabled.Value)
+            if (!ThisPlugin.PluginEnabled.Value || !ThisPlugin.EnableAttackMod.Value)
                 return;
 
             int p_hash = __instance.GetHashCode();

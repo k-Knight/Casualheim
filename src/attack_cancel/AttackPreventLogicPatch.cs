@@ -18,7 +18,7 @@ namespace Casualheim.attack_cancel {
         [HarmonyPatch(typeof(Attack), "TryAttach")]
         [HarmonyPatch(typeof(Attack), "UpdateAttach")]
         public static bool PreventLogic(ref Attack __instance) {
-            if (__instance.m_abortAttack)
+            if (__instance.m_abortAttack && ThisPlugin.PluginEnabled.Value && ThisPlugin.EnableAttackMod.Value)
                 return false;
 
             return true;
