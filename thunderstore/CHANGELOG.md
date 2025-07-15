@@ -1,4 +1,6 @@
 > # Update Information (Latest listed first)
+> ### v1.2.0
+> - added ship and boat assistance functionality
 > ### v1.1.2
 > - added configuration options to individually turn on/off the functionality
 > ### v1.1.1

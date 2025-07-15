@@ -142,6 +142,7 @@
     <Compile Include="src\Casualheim.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="src\patches\MiningChoppingPatch.cs" />
+    <Compile Include="src\patches\ShipHelpPatch.cs" />
     <Compile Include="src\patches\SkillCurvePatch.cs" />
     <Compile Include="src\patches\RegenPatch.cs" />
     <Compile Include="src\patches\AttackSlowdownPatch.cs" />

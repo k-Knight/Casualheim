@@ -38,6 +38,9 @@ Allows you to configure the speed of the arithmetic progression with a multiplie
 ## Enemy stars chance
 Allows to apply a multiplier to a chance the enemy will spawn with stars / have higher level (the ones that make enemies stronger).
 
+## Sailing assistance
+Allows to add stabilization assistance to ships and multiply sailing and rudder force for faster sailing of all boats.
+
 ## Other gameplay changes
 ### Death penalty adjustment
 Allows to configure the amount of skill loss on death. Also allows to preserve current progress to next skill level.

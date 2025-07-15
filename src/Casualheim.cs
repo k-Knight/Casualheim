@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace Casualheim {
-    [BepInPlugin("Casualheim", "Casualheim", "1.1.2")]
+    [BepInPlugin("Casualheim", "Casualheim", "1.2.0")]
     [BepInProcess("valheim.exe")]
     [BepInDependency("MK_BetterUI", BepInDependency.DependencyFlags.SoftDependency)]
     public class ThisPlugin : BaseUnityPlugin {
@@ -38,6 +38,7 @@ namespace Casualheim {
                 harmony_instance.PatchAll(typeof(patches.RegenPatch));
                 harmony_instance.PatchAll(typeof(patches.SkillCurvePatch));
                 harmony_instance.PatchAll(typeof(patches.MiningChoppingPatch));
+                harmony_instance.PatchAll(typeof(patches.ShipHelpPatch));
 
                 // attack cancel patches
                 harmony_instance.PatchAll(typeof(attack_cancel.AttackCancelPatch));
@@ -158,6 +159,11 @@ namespace Casualheim {
             SpeedBoostMultiplier = instance.Config.Bind("Leveling", "Speed boost strength multiplier", 1f, "Changes the strength of the movement speed boost (0 for disable).");
             JumpHeightMultiplier = instance.Config.Bind("Leveling", "Jump height boost strength multiplier", 1f, "Changes the strength of the jump height boost (0 for disable).");
             FallWindowMultiplier = instance.Config.Bind("Leveling", "Allowed fall window increase multiplier", 1f, "Changes the strength of allowed fall window increase where player does not receive fall damage (0 for disable).");
+
+            EnableShipHelp = instance.Config.Bind("Ship Help", "Enable tweaks for easier sailing", true, "Enables/Disables the sailing assistance system");
+            ShipStabilization = instance.Config.Bind("Ship Help", "Ship stabilization assistance multiplier", 6f, "Changes the amount of ship stabilization (1.0 is vanilla).");
+            SailForceMult = instance.Config.Bind("Ship Help", "Ship sail force multiplier", 6f, "Changes the amount of force sails generate (1.0 is vanilla).");
+            RudderForceMult = instance.Config.Bind("Ship Help", "Ship rudder force multiplier", 4f, "Changes the amount of force rudder generates (0 for disable).");
         }
 
         public const string PluginName = "Casualheim";
@@ -224,6 +230,10 @@ namespace Casualheim {
         public static ConfigEntry<float> JumpHeightMultiplier;
         public static ConfigEntry<float> FallWindowMultiplier;
 
+        public static ConfigEntry<bool> EnableShipHelp;
+        public static ConfigEntry<float> ShipStabilization;
+        public static ConfigEntry<float> RudderForceMult;
+        public static ConfigEntry<float> SailForceMult;
 
         public static Dictionary<string, WeakReference<ConfigEntry<int>>> MaxHealthPercentDict = new Dictionary<string, WeakReference<ConfigEntry<int>>>();
         public static Dictionary<string, WeakReference<ConfigEntry<int>>> HealthRegenPercentDict = new Dictionary<string, WeakReference<ConfigEntry<int>>>();
