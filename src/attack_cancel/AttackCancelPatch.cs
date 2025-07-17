@@ -3,7 +3,9 @@ using MonoMod.Utils;
 using System;
 using System.Diagnostics;
 using System.Reflection;
+using System.Security.Policy;
 using UnityEngine;
+using static TMPro.SpriteAssetUtilities.TexturePacker_JsonArray;
 
 namespace Casualheim.attack_cancel {
     [HarmonyPatch]
@@ -194,7 +196,9 @@ namespace Casualheim.attack_cancel {
             bool same_attack = false;
             if (State.player_attack_damage_done_dict.TryGetValue(p_hash, out damageDone) && __instance.m_currentAttack != null) {
                 same_attack = damageDone.atk == __instance.m_currentAttack.GetHashCode();
-                damage_done_long_ago = (time - damageDone.time) > 1.5f;
+                float diff = (time - damageDone.time);
+
+                damage_done_long_ago = diff > 1.5f;
             }
 
             if (State.last_attack_cancel_dict.ContainsKey(p_hash) && !(State.last_attack_cancel_dict[p_hash].done)) {
@@ -301,6 +305,28 @@ namespace Casualheim.attack_cancel {
         }
 
         [HarmonyPrefix]
+        [HarmonyPatch(typeof(Player), "StartEmote")]
+        public static bool PlayerStartEmotePatch(Player __instance) {
+            bool attack_finished = (__instance.m_currentAttack == null) || (__instance.m_currentAttack.IsDone());
+            float attack_start_time = -10f;
+            int p_hash = __instance.GetHashCode();
+            float time = Time.fixedTime;
+
+            if (State.last_started_attack_time.ContainsKey(p_hash))
+                attack_start_time = State.last_started_attack_time[p_hash];
+
+            if (!attack_finished || ((time - attack_start_time) < 0.25f))
+                return false;
+
+            if (ThisPlugin.DebugOutput.Value)
+                UnityEngine.Debug.Log("Casualheim | not cancelling StartEmote() !!!");
+
+            State.last_started_emote_time[p_hash] = time;
+
+            return true;
+        }
+
+        [HarmonyPrefix]
         [HarmonyPatch(typeof(Humanoid), "StartAttack")]
         public static bool HumanoidStartAttackCancelPatch_Prefix(Humanoid __instance, ref bool __result) {
             if (!ThisPlugin.PluginEnabled.Value || !ThisPlugin.EnableAttackMod.Value)
@@ -312,6 +338,19 @@ namespace Casualheim.attack_cancel {
             Player p = __instance as Player;
             int p_hash = p.GetHashCode();
             float time = Time.fixedTime;
+
+            if (State.last_ended_emote_time.ContainsKey(p_hash) && (time - State.last_ended_emote_time[p_hash] < 0.25f)) {
+                __result = false;
+                return false;
+            }
+
+            if (p.InEmote() || (State.last_started_emote_time.ContainsKey(p_hash) && (time - State.last_started_emote_time[p_hash] < 0.25f))) {
+                p.StopEmote();
+                State.last_ended_emote_time[p_hash] = time;
+
+                __result = false;
+                return false;
+            }
 
             if (State.last_attack_cancel_dict.ContainsKey(p_hash)) {
                 float delta = time - State.last_attack_cancel_dict[p_hash].time;
@@ -337,6 +376,9 @@ namespace Casualheim.attack_cancel {
 
             if (ThisPlugin.DebugOutput.Value)
                 UnityEngine.Debug.Log("Casualheim.HumanoidStartAttackCancelPatch | starting attack ...");
+
+            State.last_started_attack_time[p_hash] = time;
+
             return true;
         }
 

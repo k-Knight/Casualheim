@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace Casualheim {
-    [BepInPlugin("Casualheim", "Casualheim", "1.2.0")]
+    [BepInPlugin("Casualheim", "Casualheim", "1.2.2")]
     [BepInProcess("valheim.exe")]
     [BepInDependency("MK_BetterUI", BepInDependency.DependencyFlags.SoftDependency)]
     public class ThisPlugin : BaseUnityPlugin {

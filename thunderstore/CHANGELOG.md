@@ -1,4 +1,8 @@
 > # Update Information (Latest listed first)
+> ### v1.2.2
+> - fixed oversights in emote animation skip fix
+> ### v1.2.1
+> - fixed emotes skipping attack animation while dealing damage
 > ### v1.2.0
 > - added ship and boat assistance functionality
 > ### v1.1.2

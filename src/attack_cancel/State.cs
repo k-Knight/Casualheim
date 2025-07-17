@@ -25,6 +25,9 @@ namespace Casualheim.attack_cancel {
 
     public static class State {
         public static Dictionary<int, AttackCancel> last_attack_cancel_dict = new Dictionary<int, AttackCancel>();
+        public static Dictionary<int, float> last_started_attack_time = new Dictionary<int, float>();
+        public static Dictionary<int, float> last_started_emote_time = new Dictionary<int, float>();
+        public static Dictionary<int, float> last_ended_emote_time = new Dictionary<int, float>();
         public static Dictionary<int, BlockInputState> block_state_dict = new Dictionary<int, BlockInputState>();
         public static Dictionary<int, DamageDone> player_attack_damage_done_dict = new Dictionary<int, DamageDone>();
         public static Dictionary<int, int> player_in_attack_frame_cached = new Dictionary<int, int>();
