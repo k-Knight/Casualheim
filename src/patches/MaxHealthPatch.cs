@@ -28,11 +28,18 @@ namespace Casualheim.patches {
             WeakReference<ConfigEntry<int>> setting_ref;
             ConfigEntry<int> setting;
 
+            if (text == "human")
+                return;
+
             if (!ThisPlugin.MaxHealthPercentDict.TryGetValue(text, out setting_ref)) {
-                if (ThisPlugin.DebugOutput.Value && text != "human")
+                if (MaxHealthSetting.Settings.ContainsKey(text)) {
+                    setting_ref = new WeakReference<ConfigEntry<int>>(MaxHealthSetting.Settings[text].percent);
+                }
+                else if (ThisPlugin.DebugOutput.Value) {
                     Debug.Log("Casualheim | !!! unmatched enemy normal max health " + text + " :: " + health.ToString());
 
-                return;
+                    return;
+                }
             }
 
             if (!setting_ref.TryGetTarget(out setting))

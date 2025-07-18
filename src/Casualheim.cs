@@ -7,7 +7,24 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace Casualheim {
-    [BepInPlugin("Casualheim", "Casualheim", "1.2.2")]
+    public class MaxHealthSetting {
+        public string name;
+        public ConfigEntry<int> percent;
+
+        public MaxHealthSetting(string name) {
+            this.name = name;
+        }
+
+        public static Dictionary<string, MaxHealthSetting> Settings = new Dictionary<string, MaxHealthSetting>();
+
+        public static void CreateMapping(string id, string name, int default_percent) {
+            MaxHealthSetting setting = new MaxHealthSetting(name);
+            setting.percent = ThisPlugin.instance.Config.Bind("Mob Health", "Percent " + id + " health", default_percent, "Percent of normal health that " + name + " will have.");
+            Settings.Add(id.ToLower(), setting);
+        }
+    };
+
+    [BepInPlugin("Casualheim", "Casualheim", "1.2.3")]
     [BepInProcess("valheim.exe")]
     [BepInDependency("MK_BetterUI", BepInDependency.DependencyFlags.SoftDependency)]
     public class ThisPlugin : BaseUnityPlugin {
@@ -70,19 +87,41 @@ namespace Casualheim {
                 harmony_instance.UnpatchSelf();
         }
 
+        public static void CreateMaxHealthUnitMapping(string id, string display_name) {
+        }
+
         public static void MaxHealthDictsInit() {
-            MaxHealthPercentDict.Add("charred_twitcher", new WeakReference<ConfigEntry<int>>(PercentCharredTwitcher));
-            MaxHealthPercentDict.Add("charred_archer", new WeakReference<ConfigEntry<int>>(PercentCharredArcher));
-            MaxHealthPercentDict.Add("charred_melee", new WeakReference<ConfigEntry<int>>(PercentCharredMelee));
-            MaxHealthPercentDict.Add("charred_mage", new WeakReference<ConfigEntry<int>>(PercentCharredMage));
-            MaxHealthPercentDict.Add("charred_twitcher_summoned", new WeakReference<ConfigEntry<int>>(PercentCharredTwitcherSummoned));
-            MaxHealthPercentDict.Add("fallenvalkyrie", new WeakReference<ConfigEntry<int>>(PercentFallenValkyrie));
-            MaxHealthPercentDict.Add("bonemawserpent", new WeakReference<ConfigEntry<int>>(PercentBonemawSerpent));
-            MaxHealthPercentDict.Add("morgen", new WeakReference<ConfigEntry<int>>(PercentMorgen));
-            MaxHealthPercentDict.Add("volture", new WeakReference<ConfigEntry<int>>(PercentVolture));
-            MaxHealthPercentDict.Add("piece_charred_balista", new WeakReference<ConfigEntry<int>>(PercentPieceCharredBalista));
-            MaxHealthPercentDict.Add("bloblava", new WeakReference<ConfigEntry<int>>(PercentBlobLava));
-            MaxHealthPercentDict.Add("dvergerashlands", new WeakReference<ConfigEntry<int>>(PercentDvergerAshlands));
+            MaxHealthSetting.CreateMapping("Goblin", "Fuling", 100);
+            MaxHealthSetting.CreateMapping("GoblinBrute", "Fuling berserker", 75);
+            MaxHealthSetting.CreateMapping("GoblinShaman", "Fuling shaman", 100);
+            MaxHealthSetting.CreateMapping("Lox", "Lox", 75);
+            MaxHealthSetting.CreateMapping("Deathsquito", "Deathsquito", 100);
+            MaxHealthSetting.CreateMapping("BlobTar", "Growth", 100);
+
+            MaxHealthSetting.CreateMapping("Seeker", "Seeker", 100);
+            MaxHealthSetting.CreateMapping("SeekerBrood", "Seeker brood", 100);
+            MaxHealthSetting.CreateMapping("SeekerBrute", "Seeker soldier", 67);
+            MaxHealthSetting.CreateMapping("Gjall", "Gjall", 67);
+            MaxHealthSetting.CreateMapping("Tick", "Tick", 100);
+            MaxHealthSetting.CreateMapping("Dverger", "Dvergr rogue", 100);
+            MaxHealthSetting.CreateMapping("DvergerMage", "Dvergr mage", 100);
+            MaxHealthSetting.CreateMapping("DvergerMageFire", "Fire Dvergr mage", 100);
+            MaxHealthSetting.CreateMapping("DvergerMageIce", "Ice Dvergr mage", 100);
+            MaxHealthSetting.CreateMapping("DvergerMageSupport", "Support Dvergr mage", 100);
+
+            MaxHealthSetting.CreateMapping("FallenValkyrie", "Fallen Valkyrie", 67);
+            MaxHealthSetting.CreateMapping("Morgen", "Morgen", 50);
+            MaxHealthSetting.CreateMapping("BonemawSerpent", "Bonemaw Serpent", 67);
+            MaxHealthSetting.CreateMapping("Asksvin", "Asksvin", 100);
+            MaxHealthSetting.CreateMapping("Volture", "Volture", 100);
+            MaxHealthSetting.CreateMapping("piece_Charred_Balista", "Skugg", 100);
+            MaxHealthSetting.CreateMapping("BlobLava", "Skugg", 100);
+            MaxHealthSetting.CreateMapping("Charred_Melee_Dyrnwyn", "Lord Reto", 100);
+            MaxHealthSetting.CreateMapping("DvergerAshlands", "Ashlands Dvergr", 100);
+            MaxHealthSetting.CreateMapping("Charred_Melee", "Charred Warrior", 67);
+            MaxHealthSetting.CreateMapping("Charred_Archer", "Charred Marksman", 100);
+            MaxHealthSetting.CreateMapping("Charred_Mage", "Charred Warlock", 67);
+            MaxHealthSetting.CreateMapping("Charred_Twitcher", "Charred Twitcher", 85);
 
             MaxHealthPercentDict.Add("eikthyr", new WeakReference<ConfigEntry<int>>(PercentHealthEikthyr));
             MaxHealthPercentDict.Add("gdking", new WeakReference<ConfigEntry<int>>(PercentHealthElder));
@@ -91,7 +130,7 @@ namespace Casualheim {
             MaxHealthPercentDict.Add("goblinking", new WeakReference<ConfigEntry<int>>(PercentHealthYagluth));
             MaxHealthPercentDict.Add("seekerqueen", new WeakReference<ConfigEntry<int>>(PercentHealthQueen));
             MaxHealthPercentDict.Add("fader", new WeakReference<ConfigEntry<int>>(PercentHealthFader));
-
+            
             HealthRegenPercentDict.Add("eikthyr", new WeakReference<ConfigEntry<int>>(PercentRegenEikthyr));
             HealthRegenPercentDict.Add("gdking", new WeakReference<ConfigEntry<int>>(PercentRegenElder));
             HealthRegenPercentDict.Add("bonemass", new WeakReference<ConfigEntry<int>>(PercentRegenBonemass));
@@ -121,18 +160,6 @@ namespace Casualheim {
             PreventDodgeSpamming = instance.Config.Bind("Attacks", "Prevent dodge spamming", false, "Prevent dodge spamming if player continiously holds down the dodge key.");
 
             EnableEnemyHealthMod = instance.Config.Bind("Mob Health", "Enable enemy health change", true, "Enables/Disables the change of enemies' max health.");
-            PercentCharredTwitcher = instance.Config.Bind("Mob Health", "Percent Charred Twitcher health", 100, "Percent of normal health that Charred Twitcher will have.");
-            PercentCharredArcher = instance.Config.Bind("Mob Health", "Percent CharredArcher health", 100, "Percent of normal health that Charred Marksman will have.");
-            PercentCharredMelee = instance.Config.Bind("Mob Health", "Percent CharredMelee health", 66, "Percent of normal health that Charred Warrior will have.");
-            PercentCharredMage = instance.Config.Bind("Mob Health", "Percent CharredMage health", 66, "Percent of normal health that Charred Warlock will have.");
-            PercentCharredTwitcherSummoned = instance.Config.Bind("Mob Health", "Percent CharredTwitcherSummoned health", 100, "Percent of normal health that Summoned Twitcher will have.");
-            PercentFallenValkyrie = instance.Config.Bind("Mob Health", "Percent FallenValkyrie health", 50, "Percent of normal health that Fallen Valkyrie will have.");
-            PercentBonemawSerpent = instance.Config.Bind("Mob Health", "Percent BonemawSerpent health", 50, "Percent of normal health that Bonemaw Serpent will have.");
-            PercentMorgen = instance.Config.Bind("Mob Health", "Percent Morgen health", 50, "Percent of normal health that Morgen will have.");
-            PercentVolture = instance.Config.Bind("Mob Health", "Percent Volture health", 100, "Percent of normal health that Volture will have.");
-            PercentPieceCharredBalista = instance.Config.Bind("Mob Health", "Percent PieceCharredBalista health", 100, "Percent of normal health that Skugg will have.");
-            PercentBlobLava = instance.Config.Bind("Mob Health", "Percent BlobLava health", 100, "Percent of normal health that Lava Blob will have.");
-            PercentDvergerAshlands = instance.Config.Bind("Mob Health", "Percent DvergerAshlands health", 100, "Percent of normal health that Ashlands Dvergr will have.");
 
             EnableBossHealthRegenMod = instance.Config.Bind("Boss Health", "Enable boss health change", true, "Enables/Disables the change of boss max health and regen.");
             PercentRegenEikthyr = instance.Config.Bind("Boss Health", "Percent regen Eikthyr", 0, "Percent of normal Eikthyr health regen.");
@@ -191,18 +218,6 @@ namespace Casualheim {
         public static ConfigEntry<bool> PreventDodgeSpamming;
 
         public static ConfigEntry<bool> EnableEnemyHealthMod;
-        public static ConfigEntry<int> PercentCharredTwitcher;
-        public static ConfigEntry<int> PercentCharredArcher;
-        public static ConfigEntry<int> PercentCharredMelee;
-        public static ConfigEntry<int> PercentCharredMage;
-        public static ConfigEntry<int> PercentCharredTwitcherSummoned;
-        public static ConfigEntry<int> PercentFallenValkyrie;
-        public static ConfigEntry<int> PercentBonemawSerpent;
-        public static ConfigEntry<int> PercentMorgen;
-        public static ConfigEntry<int> PercentVolture;
-        public static ConfigEntry<int> PercentPieceCharredBalista;
-        public static ConfigEntry<int> PercentBlobLava;
-        public static ConfigEntry<int> PercentDvergerAshlands;
 
         public static ConfigEntry<bool> EnableBossHealthRegenMod;
         public static ConfigEntry<int> RegenerationMultiplier;

@@ -1,4 +1,6 @@
 > # Update Information (Latest listed first)
+> ### v1.2.3
+> - refactored mob max health settings and added more mobs to the config
 > ### v1.2.2
 > - fixed oversights in emote animation skip fix
 > ### v1.2.1

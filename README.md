@@ -1,6 +1,8 @@
 # Casualheim
 Makes Valheim more casual in several ways.
 
+**ALMOST EVERYTHING CAN BE TURNED ON AND OFF INDIVIDUALLY**
+
 ## Cancelling attacks
 Allows a player to cancel their attack if the attack has not yet dealt damage by:
 - blocking
