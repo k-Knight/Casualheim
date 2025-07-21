@@ -24,7 +24,7 @@ namespace Casualheim {
         }
     };
 
-    [BepInPlugin("Casualheim", "Casualheim", "1.2.3")]
+    [BepInPlugin("Casualheim", "Casualheim", "1.2.4")]
     [BepInProcess("valheim.exe")]
     [BepInDependency("MK_BetterUI", BepInDependency.DependencyFlags.SoftDependency)]
     public class ThisPlugin : BaseUnityPlugin {
@@ -56,6 +56,7 @@ namespace Casualheim {
                 harmony_instance.PatchAll(typeof(patches.SkillCurvePatch));
                 harmony_instance.PatchAll(typeof(patches.MiningChoppingPatch));
                 harmony_instance.PatchAll(typeof(patches.ShipHelpPatch));
+                harmony_instance.PatchAll(typeof(patches.TrophyDropPatch));
 
                 // attack cancel patches
                 harmony_instance.PatchAll(typeof(attack_cancel.AttackCancelPatch));
@@ -147,6 +148,8 @@ namespace Casualheim {
             EnemyLevelChanceMultiplier = instance.Config.Bind("General", "Enemy level chance multiplier", 3f, "My how much the chance of leveling up enemy (stars) is multiplied (1.0 for default values).");
             AllowClearedBuilding = instance.Config.Bind("General", "Allow cleared dungeon building", true, "Allow building in dungeons/locations when all enemies are dead. May require a new world (kinda).");
             ChopMineDamageMultiplier = instance.Config.Bind("General", "Multiplier for chop/mine damage", 2f, "Multiplies the damage of chopping and mining (0 for disable).");
+            TrophyDropChanceMult = instance.Config.Bind("General", "Trophy drop chance multiplier", 2f, "Multiplies the drop chance for the trophies (1.0 for no change).");
+            TrophyLevelDropChanceMult = instance.Config.Bind("General", "Trophy drop chance multiplier per level", 2f, "Multiplies the drop chance for the trophies further for every creature star (1.0 for no change).");
 
             EasierSkillCurveEnabled = instance.Config.Bind("Skills", "Enable easier skill curve", true, "Enables/Disables easier skill curve.");
             RequiredExpMultiplier = instance.Config.Bind("Skills", "Required exp multiplier", 1f, "This changes the speed of arithmetic progression in required experience to reach next skill level.");
@@ -203,6 +206,8 @@ namespace Casualheim {
         public static ConfigEntry<int> NumberOfPlayersMax;
         public static ConfigEntry<bool> AllowClearedBuilding;
         public static ConfigEntry<float> ChopMineDamageMultiplier;
+        public static ConfigEntry<float> TrophyDropChanceMult;
+        public static ConfigEntry<float> TrophyLevelDropChanceMult;
 
         public static ConfigEntry<bool> EasierSkillCurveEnabled;
         public static ConfigEntry<float> RequiredExpMultiplier;

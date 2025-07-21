@@ -52,3 +52,5 @@ Allows to configure the multiplier for pickaxe and axe damage they do to the res
 Sneak speed now affected by sneaking skill and by player equipment.
 ### Fall damage
 Fall damage is now affected by jumping skill. Also the fall window without damage is a extended by half at maximum player level.
+### Trophy drops
+Allows to multiply drop chances for trophies from mobs simply and for each star the mob has.

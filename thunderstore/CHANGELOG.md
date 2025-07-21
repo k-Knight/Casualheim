@@ -1,4 +1,7 @@
 > # Update Information (Latest listed first)
+> ### v1.2.4
+> - fixed errors in multiplayer after refactoring max health setter
+> - added ability to increase trophy drop chance
 > ### v1.2.3
 > - refactored mob max health settings and added more mobs to the config
 > ### v1.2.2

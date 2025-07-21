@@ -1,6 +1,6 @@
 {
     "name": "Casualheim",
-    "version_number": "1.2.3",
+    "version_number": "1.2.4",
     "website_url": "https://github.com/k-Knight/Casualheim",
     "description": "Server and Client mod that makes the game more casual in multiple ways.",
     "dependencies": [
