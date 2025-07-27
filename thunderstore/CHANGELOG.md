@@ -1,4 +1,8 @@
 > # Update Information (Latest listed first)
+> ### v1.2.6
+> - added leveling bonuses for eitr amount and regeneration
+> ### v1.2.5
+> - fixed enabling of building in cleared locations
 > ### v1.2.4
 > - fixed errors in multiplayer after refactoring max health setter
 > - added ability to increase trophy drop chance

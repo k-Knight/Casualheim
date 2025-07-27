@@ -7,6 +7,7 @@ namespace Casualheim.leveling {
     [HarmonyPatch]
     public class StatModificationPatch {
         public static Dictionary<int, float> stamina_values = new Dictionary<int, float>();
+        public static Dictionary<int, float> eitr_values = new Dictionary<int, float>();
 
         public static float GetLevelEffectStrength(ref ZDO zdo, float strength_at_100) {
             return ((float)zdo.GetInt("betterui_level")) / 100f / (1f / (strength_at_100 - 1f)) + 1f;
@@ -60,41 +61,57 @@ namespace Casualheim.leveling {
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(Player), "UpdateStats", new Type[] { typeof(float) })]
-        public static void PlayerUpdateStatsPatch_Prefix(Player __instance) {
-            if (!ThisPlugin.PluginEnabled.Value || !ThisPlugin.EnableLeveling.Value || ThisPlugin.StaminaRegenBoostMultiplier.Value == 0f)
+        [HarmonyPatch(typeof(Player), "SetMaxEitr")]
+        public static void PlayerSetMaxEitrPatch(Player __instance, ref float eitr) {
+            if (!ThisPlugin.PluginEnabled.Value || !ThisPlugin.EnableLeveling.Value || ThisPlugin.EitrBoostMultiplier.Value == 0f)
                 return;
-
-            stamina_values[__instance.GetHashCode()] = __instance.m_stamina;
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(Player), "UpdateStats", new Type[] { typeof(float) })]
-        public static void PlayerUpdateStatsPatch_Postfix(Player __instance) {
-            if (!ThisPlugin.PluginEnabled.Value || !ThisPlugin.EnableLeveling.Value || ThisPlugin.StaminaRegenBoostMultiplier.Value == 0f)
-                return;
-
-            int p_hash = __instance.GetHashCode();
-
-            if (!stamina_values.ContainsKey(p_hash)) {
-                if (ThisPlugin.DebugOutput.Value)
-                    Debug.Log("Casualheim.StatModificationPatch | stamina_values has no record for player " + __instance.m_name + " !!!");
-
-                return;
-            }
 
             ZDO zdo;
 
             if (!Util.TryGetPlayerZDO(ref __instance, out zdo))
                 return;
 
-            float strength = GetLevelEffectStrength(ref zdo, 2f) * ThisPlugin.StaminaRegenBoostMultiplier.Value;
-            float stam_diff = __instance.m_stamina - stamina_values[p_hash];
+            float strength = GetLevelEffectStrength(ref zdo, 1.5f) * ThisPlugin.EitrBoostMultiplier.Value;
+            eitr *= strength;
+        }
 
-            if (stam_diff <= 0f)
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Player), "UpdateStats", new Type[] { typeof(float) })]
+        public static void PlayerUpdateStatsPatch_Prefix(Player __instance) {
+            if (!ThisPlugin.PluginEnabled.Value || !ThisPlugin.EnableLeveling.Value)
                 return;
 
-            __instance.m_stamina = Mathf.Min(__instance.GetMaxStamina(), stam_diff * (strength - 1f) + __instance.m_stamina);
+            stamina_values[__instance.GetHashCode()] = __instance.m_stamina;
+            eitr_values[__instance.GetHashCode()] = __instance.m_eitr;
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Player), "UpdateStats", new Type[] { typeof(float) })]
+        public static void PlayerUpdateStatsPatch_Postfix(Player __instance) {
+            if (!ThisPlugin.PluginEnabled.Value || !ThisPlugin.EnableLeveling.Value)
+                return;
+
+            int p_hash = __instance.GetHashCode();
+            ZDO zdo;
+
+            if (!Util.TryGetPlayerZDO(ref __instance, out zdo))
+                return;
+
+            if (stamina_values.ContainsKey(p_hash) && ThisPlugin.StaminaRegenBoostMultiplier.Value > 0.001f) {
+                float strength = GetLevelEffectStrength(ref zdo, 2f) * ThisPlugin.StaminaRegenBoostMultiplier.Value;
+                float stam_diff = __instance.m_stamina - stamina_values[p_hash];
+
+                if (stam_diff > 0f)
+                    __instance.m_stamina = Mathf.Min(__instance.GetMaxStamina(), stam_diff * (strength - 1f) + __instance.m_stamina);
+            }
+
+            if (eitr_values.ContainsKey(p_hash) && ThisPlugin.EitrRegenBoostMultiplier.Value > 0.001f) {
+                float strength = GetLevelEffectStrength(ref zdo, 2f) * ThisPlugin.EitrRegenBoostMultiplier.Value;
+                float eitr_diff = __instance.m_eitr - eitr_values[p_hash];
+
+                if (eitr_diff > 0f)
+                    __instance.m_eitr = Mathf.Min(__instance.GetMaxEitr(), eitr_diff * (strength - 1f) + __instance.m_eitr);
+            }
         }
 
         [HarmonyPostfix]

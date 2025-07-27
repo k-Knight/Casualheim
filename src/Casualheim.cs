@@ -24,7 +24,7 @@ namespace Casualheim {
         }
     };
 
-    [BepInPlugin("Casualheim", "Casualheim", "1.2.4")]
+    [BepInPlugin("Casualheim", "Casualheim", "1.2.6")]
     [BepInProcess("valheim.exe")]
     [BepInDependency("MK_BetterUI", BepInDependency.DependencyFlags.SoftDependency)]
     public class ThisPlugin : BaseUnityPlugin {
@@ -186,6 +186,8 @@ namespace Casualheim {
             HealthRegenBoostMultiplier = instance.Config.Bind("Leveling", "Health regen boost strength multiplier", 1f, "Changes the strength of the health regeneration boost (0 for disable).");
             StaminaBoostMultiplier = instance.Config.Bind("Leveling", "Stamina boost strength multiplier", 1f, "Changes the strength of the stamina boost (0 for disable).");
             StaminaRegenBoostMultiplier = instance.Config.Bind("Leveling", "Stamina regen boost strength multiplier", 1f, "Changes the strength of the stamina regeneration boost (0 for disable).");
+            EitrBoostMultiplier = instance.Config.Bind("Leveling", "Eitr boost strength multiplier", 1f, "Changes the strength of the eitr boost (0 for disable).");
+            EitrRegenBoostMultiplier = instance.Config.Bind("Leveling", "Eitr regen boost strength multiplier", 1f, "Changes the strength of the eitr regeneration boost (0 for disable).");
             SpeedBoostMultiplier = instance.Config.Bind("Leveling", "Speed boost strength multiplier", 1f, "Changes the strength of the movement speed boost (0 for disable).");
             JumpHeightMultiplier = instance.Config.Bind("Leveling", "Jump height boost strength multiplier", 1f, "Changes the strength of the jump height boost (0 for disable).");
             FallWindowMultiplier = instance.Config.Bind("Leveling", "Allowed fall window increase multiplier", 1f, "Changes the strength of allowed fall window increase where player does not receive fall damage (0 for disable).");
@@ -246,6 +248,8 @@ namespace Casualheim {
         public static ConfigEntry<float> HealthRegenBoostMultiplier;
         public static ConfigEntry<float> StaminaBoostMultiplier;
         public static ConfigEntry<float> StaminaRegenBoostMultiplier;
+        public static ConfigEntry<float> EitrBoostMultiplier;
+        public static ConfigEntry<float> EitrRegenBoostMultiplier;
         public static ConfigEntry<float> SpeedBoostMultiplier;
         public static ConfigEntry<float> JumpHeightMultiplier;
         public static ConfigEntry<float> FallWindowMultiplier;

@@ -30,12 +30,12 @@ namespace Casualheim.patches {
                 return true;
             }
 
-            if (ThisPlugin.DebugOutput.Value)
-                UnityEngine.Debug.Log("Casualheim | DETERMINISICALLY found zloc hash for " + obj.GetType() + " :: " + zloc_hash);
-
-            zdo.Set("zloc_checked", true);
-            zdo.Set("zloc_hash", last_zone_location_hash);
             zloc_hash = last_zone_location_hash;
+            zdo.Set("zloc_checked", true);
+            zdo.Set("zloc_hash", zloc_hash);
+
+            if (ThisPlugin.DebugOutput.Value)
+                Debug.Log("Casualheim | DETERMINISICALLY found zloc hash for " + obj.GetType() + " :: " + zloc_hash);
 
             return true;
         }
@@ -57,17 +57,17 @@ namespace Casualheim.patches {
 
             if (!loc_2_zloc_dict.ContainsKey(loc.GetHashCode())) {
                 if (ThisPlugin.DebugOutput.Value)
-                    UnityEngine.Debug.Log("Casualheim | CreatureSpawner.Spawn location is not in the dictrionary !!!");
+                    Debug.Log("Casualheim | CreatureSpawner.Spawn location is not in the dictrionary !!!");
 
                 return false;
             }
 
-            if (ThisPlugin.DebugOutput.Value)
-                UnityEngine.Debug.Log("Casualheim | HEURISTICALLY found zloc hash for " + obj.GetType() + " :: " + zloc_hash);
-
             zloc_hash = loc_2_zloc_dict[loc.GetHashCode()];
             zdo.Set("zloc_checked", true);
             zdo.Set("zloc_hash", zloc_hash);
+
+            if (ThisPlugin.DebugOutput.Value)
+                Debug.Log("Casualheim | HEURISTICALLY found zloc hash for " + obj.GetType() + " :: " + zloc_hash);
 
             return true;
         }
@@ -95,16 +95,17 @@ namespace Casualheim.patches {
 
         [HarmonyPrefix]
         [HarmonyPatch(typeof(Location), "IsInside")]
-        public static void LocationIsInsidePatch(ref Location __instance, ref bool __result, ref bool buildCheck, ref Vector3 point) {
-            if (__instance == null || !buildCheck || !__instance.m_noBuild || !__result)
+        public static void LocationIsInsidePatch(ref Location __instance, ref bool buildCheck, ref Vector3 point) {
+            if (__instance == null || !buildCheck || !__instance.m_noBuild)
                 return;
 
             if (!ThisPlugin.PluginEnabled.Value || !ThisPlugin.AllowClearedBuilding.Value)
                 return;
 
+
             if (!loc_2_zloc_dict.ContainsKey(__instance.GetHashCode())) {
                 if (ThisPlugin.DebugOutput.Value)
-                    UnityEngine.Debug.Log("Casualheim | Location.IsInside location is not in the dictrionary !!!");
+                    Debug.Log("Casualheim | Location.IsInside location is not in the dictrionary !!!");
 
                 return;
             }
@@ -130,7 +131,7 @@ namespace Casualheim.patches {
                 if (zloc_hash == zdo_zloc_hash && cs.SpawnedCreatureStillExists(connectionZDOID)) {
                     units_dead = false;
                     if (ThisPlugin.DebugOutput.Value)
-                        UnityEngine.Debug.Log("Casualheim | creaturespawner [" + cs.GetHashCode() + "] says char still exists for zloc [" + zloc_hash + "] !");
+                        Debug.Log("Casualheim | creaturespawner [" + cs.GetHashCode() + "] says char still exists for zloc [" + zloc_hash + "] !");
 
                     break;
                 }
@@ -152,7 +153,7 @@ namespace Casualheim.patches {
                 if (zloc_hash == zdo_zloc_hash) {
                     units_dead = false;
                     if (ThisPlugin.DebugOutput.Value)
-                        UnityEngine.Debug.Log("Casualheim | found char " + character.m_name.ToLower() + " that is still alive for zloc [" + zloc_hash + "] !");
+                        Debug.Log("Casualheim | found char " + character.m_name.ToLower() + " that is still alive for zloc [" + zloc_hash + "] !");
 
                     break;
                 }
@@ -227,7 +228,7 @@ namespace Casualheim.patches {
                 return;
 
             if (ThisPlugin.DebugOutput.Value)
-                UnityEngine.Debug.Log("Casualheim | setting zloc_hash [" + (from_cs ? last_creature_spawner_hash : (from_cd ? last_character_drop_hash : -1)) + "] for char :: " + __instance.m_name.ToLower());
+                Debug.Log("Casualheim | setting zloc_hash [" + (from_cs ? last_creature_spawner_hash : (from_cd ? last_character_drop_hash : -1)) + "] for char :: " + __instance.m_name.ToLower());
 
             if (from_cs)
                 zdo.Set("zloc_hash", last_creature_spawner_hash);

@@ -33,14 +33,10 @@ namespace Casualheim.patches {
                 return;
 
             if (!ThisPlugin.MaxHealthPercentDict.TryGetValue(text, out setting_ref)) {
-                if (MaxHealthSetting.Settings.ContainsKey(text)) {
+                if (MaxHealthSetting.Settings.ContainsKey(text))
                     setting = MaxHealthSetting.Settings[text].percent;
-                }
-                else if (ThisPlugin.DebugOutput.Value) {
-                    Debug.Log("Casualheim | !!! unmatched enemy normal max health " + text + " :: " + health.ToString());
-
+                else
                     return;
-                }
             }
 
             if (setting == null && setting_ref == null)
@@ -50,8 +46,6 @@ namespace Casualheim.patches {
                 return;
 
             health = health * ((float)setting.Value / 100.0f);
-            if (ThisPlugin.DebugOutput.Value)
-                Debug.Log("Casualheim.MaxHealthPatch :: " + text + " :: " + health.ToString());
         }
     }
 }
