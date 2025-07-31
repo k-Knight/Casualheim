@@ -23,6 +23,13 @@ namespace Casualheim.attack_cancel {
         public float time;
     };
 
+    public struct PlayerAttackControls {
+        public bool atk;
+        public bool atkHold;
+        public bool secAtk;
+        public bool secAtkHold;
+    };
+
     public static class State {
         public static Dictionary<int, AttackCancel> last_attack_cancel_dict = new Dictionary<int, AttackCancel>();
         public static Dictionary<int, float> last_started_attack_time = new Dictionary<int, float>();
@@ -32,6 +39,8 @@ namespace Casualheim.attack_cancel {
         public static Dictionary<int, DamageDone> player_attack_damage_done_dict = new Dictionary<int, DamageDone>();
         public static Dictionary<int, int> player_in_attack_frame_cached = new Dictionary<int, int>();
         public static Dictionary<int, bool> player_started_secondary = new Dictionary<int, bool>();
+        public static Dictionary<int, PlayerAttackControls> player_controls = new Dictionary<int, PlayerAttackControls>();
+        public static Dictionary<int, bool> player_attack_stop = new Dictionary<int, bool>();
         public static Dictionary<int, WeakReference<Player>> zanim_player_dict = new Dictionary<int, WeakReference<Player>>();
     };
 }

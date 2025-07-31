@@ -1,4 +1,6 @@
 > # Update Information (Latest listed first)
+> ### v1.2.7
+> - resolved the issue where attack cancelling would disrupt normal function of weapons with channeling attacks (bursts)
 > ### v1.2.6
 > - added leveling bonuses for eitr amount and regeneration
 > ### v1.2.5

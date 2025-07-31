@@ -7,23 +7,30 @@ using UnityEngine;
 
 namespace Casualheim {
     public static class Util {
-        public static HashSet<string> unique_callers = new HashSet<string>();
+        public class CallStackPrinter {
+            public HashSet<string> unique_callers = new HashSet<string>();
+            public string caller_name;
 
-        public static void print_callstack(string caller_method) {
-            StackFrame[] frames = new StackTrace(fNeedFileInfo: true).GetFrames();
+            public CallStackPrinter(string caller_name) {
+                this.caller_name = caller_name;
+            }
 
-            string accum = "\n";
-            for (int i = 1; i < frames.Length; i++)
-                accum += "    " + new String(' ', i * 2) + frames[i].GetMethod().ToString() + "\n";
+            public void print_callstack(bool force_print = false) {
+                StackFrame[] frames = new StackTrace(fNeedFileInfo: true).GetFrames();
 
-            if (unique_callers.Contains(accum))
-                return;
+                string accum = "\n";
+                for (int i = 1; i < frames.Length; i++)
+                    accum += "    " + new String(' ', i * 2) + frames[i].GetMethod().ToString() + "\n";
 
-            unique_callers.Add(accum);
+                if (!force_print && unique_callers.Contains(accum))
+                    return;
 
-            UnityEngine.Debug.Log("");
-            UnityEngine.Debug.Log("in " + caller_method + "()");
-            UnityEngine.Debug.Log(accum);
+                unique_callers.Add(accum);
+
+                UnityEngine.Debug.Log("");
+                UnityEngine.Debug.Log("in " + caller_name);
+                UnityEngine.Debug.Log(accum);
+            }
         }
 
         public static bool check_caller(string caller_method) {

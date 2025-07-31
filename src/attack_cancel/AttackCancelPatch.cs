@@ -54,6 +54,13 @@ namespace Casualheim.attack_cancel {
             if (!State.zanim_player_dict[hash].TryGetTarget(out p))
                 return true;
 
+            if (name == "csca!stop") {
+                if (p.m_currentAttack != null)
+                    p.m_currentAttack.Stop();
+
+                return false;
+            }
+
             var animator = p.m_animator;
             var animEvent = p.m_animEvent;
 
@@ -286,6 +293,47 @@ namespace Casualheim.attack_cancel {
                 }
             }
 
+            if (!cancel_attack) {
+                PlayerAttackControls p_ctrl;
+                bool in_attack_stop = false;
+
+                State.player_attack_stop.TryGetValue(p_hash, out in_attack_stop);
+
+                if (!in_attack_stop && __instance.m_currentAttack != null && State.player_controls.TryGetValue(p_hash, out p_ctrl)) {
+                    Attack atk = __instance.m_currentAttack;
+                    bool is_channeling_attack = atk.m_projectileBursts > 1;
+                    bool channeling_done = atk.m_projectileBursts == atk.m_projectileBurstsFired;
+
+                    if (!atk.m_attackDone && (p_ctrl.atkHold || p_ctrl.secAtkHold) && is_channeling_attack && !channeling_done) {
+                        if (ThisPlugin.DebugOutput.Value)
+                            UnityEngine.Debug.Log("PlayerInAttackCancelPatch() :: preventing channeling attack from ending !!!");
+
+                        __result = true;
+
+                        return;
+                    }
+
+                    float diff = 10f;
+                    if (State.last_started_attack_time.TryGetValue(p_hash, out diff))
+                        diff = time - diff;
+
+                    if (diff > 0.2 && is_channeling_attack && ((!p_ctrl.atk && !p_ctrl.atkHold && !p_ctrl.secAtk && !p_ctrl.secAtkHold) || channeling_done)) {
+                        if (ThisPlugin.DebugOutput.Value)
+                            UnityEngine.Debug.Log("stopping burst attack ::"
+                                + "\n\tm_projectileBurstsFired :: " + atk.m_projectileBurstsFired
+                                + "\n\tm_projectileBursts :: " + atk.m_projectileBursts
+                                + "\n\tm_projectileAttackStarted :: " + atk.m_projectileAttackStarted
+                                + "\n\tm_projectileFireTimer :: " + atk.m_projectileFireTimer
+                                + "\n\tm_attackType :: " + atk.m_attackType
+                            );
+
+                        State.player_attack_stop[p_hash] = true;
+                        __instance.m_nview.InvokeRPC(ZNetView.Everybody, "SetTrigger", new object[] { "csca!stop" });
+                        __instance.m_currentAttack = null;
+                    }
+                }
+            }
+
             if (same_attack && !damage_done_long_ago && !trying_to_block)
                 return;
 
@@ -307,6 +355,9 @@ namespace Casualheim.attack_cancel {
         [HarmonyPrefix]
         [HarmonyPatch(typeof(Player), "StartEmote")]
         public static bool PlayerStartEmotePatch(Player __instance) {
+            if (!ThisPlugin.PluginEnabled.Value || !ThisPlugin.EnableAttackMod.Value)
+                return true;
+
             bool attack_finished = (__instance.m_currentAttack == null) || (__instance.m_currentAttack.IsDone());
             float attack_start_time = -10f;
             int p_hash = __instance.GetHashCode();
@@ -378,6 +429,7 @@ namespace Casualheim.attack_cancel {
                 UnityEngine.Debug.Log("Casualheim.HumanoidStartAttackCancelPatch | starting attack ...");
 
             State.last_started_attack_time[p_hash] = time;
+            State.player_attack_stop[p_hash] = false;
 
             return true;
         }
@@ -385,6 +437,9 @@ namespace Casualheim.attack_cancel {
         [HarmonyPostfix]
         [HarmonyPatch(typeof(Humanoid), "StartAttack")]
         public static void HumanoidStartAttackCancelPatch_Postfix(Humanoid __instance, ref bool __result, ref bool secondaryAttack) {
+            if (!ThisPlugin.PluginEnabled.Value || !ThisPlugin.EnableAttackMod.Value)
+                return;
+
             if (__result && __instance.IsPlayer())
                 State.player_started_secondary[(__instance as Player).GetHashCode()] = secondaryAttack;
         }
@@ -438,6 +493,8 @@ namespace Casualheim.attack_cancel {
                 };
             }
 
+            bool skip = false;
+
             if ((block_state && block_start_time > attack_start_time) || (doldge_state || (time - dodge_end_time < 0.15f))) {
                 if (ThisPlugin.DebugOutput.Value)
                     UnityEngine.Debug.Log("Casualheim.PlayerSetControlsPatch | stopping attack input due to block/dodge");
@@ -447,23 +504,34 @@ namespace Casualheim.attack_cancel {
                 secondaryAttack = false;
                 secondaryAttackHold = false;
 
-                return;
+                skip = true;
             }
 
-            if (!State.last_attack_cancel_dict.ContainsKey(p_hash))
-                return;
+            if (!skip && !State.last_attack_cancel_dict.ContainsKey(p_hash))
+                skip = true;
 
-            float delta = Time.fixedTime - State.last_attack_cancel_dict[p_hash].time;
-            if (delta >= 0.1f)
-                return;
+            if (!skip) {
+                float delta = Time.fixedTime - State.last_attack_cancel_dict[p_hash].time;
+                if (delta >= 0.1f)
+                    skip = true;
+            }
 
-            if (ThisPlugin.DebugOutput.Value)
+            if (!skip && ThisPlugin.DebugOutput.Value)
                 UnityEngine.Debug.Log("Casualheim.PlayerSetControlsPatch | stopping attack input due recent cancelled attack");
 
-            attack = false;
-            attackHold = false;
-            secondaryAttack = false;
-            secondaryAttackHold = false;
+            if (!skip) {
+                attack = false;
+                attackHold = false;
+                secondaryAttack = false;
+                secondaryAttackHold = false;
+            }
+
+            State.player_controls[p_hash] = new PlayerAttackControls {
+                atk = attack,
+                atkHold = attackHold,
+                secAtk = secondaryAttack,
+                secAtkHold = secondaryAttackHold
+            };
         }
     }
 }
