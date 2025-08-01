@@ -1,4 +1,6 @@
 > # Update Information (Latest listed first)
+> ### v1.2.8
+> - fixed a bunch of animation issues and relaxed cancellation requirements
 > ### v1.2.7
 > - resolved the issue where attack cancelling would disrupt normal function of weapons with channeling attacks (bursts)
 > ### v1.2.6

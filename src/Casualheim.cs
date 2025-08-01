@@ -24,7 +24,7 @@ namespace Casualheim {
         }
     };
 
-    [BepInPlugin("Casualheim", "Casualheim", "1.2.7")]
+    [BepInPlugin("Casualheim", "Casualheim", "1.2.8")]
     [BepInProcess("valheim.exe")]
     [BepInDependency("MK_BetterUI", BepInDependency.DependencyFlags.SoftDependency)]
     public class ThisPlugin : BaseUnityPlugin {
@@ -200,7 +200,7 @@ namespace Casualheim {
 
         public const string PluginName = "Casualheim";
         public const string PluginAuthor = "k-Knight";
-        public const string PluginVersion = "1.2.7";
+        public const string PluginVersion = "1.2.8";
         public const string PluginGUID = "Casualheim";
 
         public static ConfigEntry<bool> PluginEnabled;

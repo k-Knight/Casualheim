@@ -3,9 +3,7 @@ using MonoMod.Utils;
 using System;
 using System.Diagnostics;
 using System.Reflection;
-using System.Security.Policy;
 using UnityEngine;
-using static TMPro.SpriteAssetUtilities.TexturePacker_JsonArray;
 
 namespace Casualheim.attack_cancel {
     [HarmonyPatch]
@@ -142,16 +140,10 @@ namespace Casualheim.attack_cancel {
             Player p = __instance as Player;
             Attack atk = p.m_currentAttack;
 
-            //if (atk.m_abortAttack)
-            //    return;
-
             int p_hash = p.GetHashCode();
             int atk_hash = atk.GetHashCode();
 
-            if (!State.player_attack_damage_done_dict.ContainsKey(p_hash))
-                State.player_attack_damage_done_dict.Add(p_hash, new DamageDone { atk = atk_hash, time = Time.fixedTime });
-            else
-                State.player_attack_damage_done_dict[p_hash] = new DamageDone { atk = atk_hash, time = Time.fixedTime };
+            State.player_attack_damage_done_dict[p_hash] = new DamageDone { atk = atk_hash, time = Time.fixedTime };
         }
 
         [HarmonyPrefix]
@@ -201,19 +193,23 @@ namespace Casualheim.attack_cancel {
             DamageDone damageDone;
             bool damage_done_long_ago = false;
             bool same_attack = false;
+            float damage_done_time;
             if (State.player_attack_damage_done_dict.TryGetValue(p_hash, out damageDone) && __instance.m_currentAttack != null) {
                 same_attack = damageDone.atk == __instance.m_currentAttack.GetHashCode();
-                float diff = (time - damageDone.time);
+                damage_done_time = damageDone.time;
+                float diff = (time - damage_done_time);
 
-                damage_done_long_ago = diff > 1.5f;
+                damage_done_long_ago = diff > 1f;
             }
+            else
+                damage_done_time = 0f;
 
             if (State.last_attack_cancel_dict.ContainsKey(p_hash) && !(State.last_attack_cancel_dict[p_hash].done)) {
                 float delta = time - State.last_attack_cancel_dict[p_hash].time;
 
                 if (delta < 0.1f) {
                     if (ThisPlugin.DebugOutput.Value)
-                        UnityEngine.Debug.Log("Casualheim | (in attack) attack canceled recently :: " + delta + "s  ---  " + MonoUpdaters.UpdateCount);
+                        UnityEngine.Debug.Log("Casualheim.PlayerInAttackCancelPatch | attack canceled recently :: " + delta + "s  ---  " + MonoUpdaters.UpdateCount);
 
                     SkipCurrentAttackAnimation(ref __instance);
                     __result = false;
@@ -232,7 +228,12 @@ namespace Casualheim.attack_cancel {
             if (__instance.m_currentAttack == null)
                 return;
 
-            bool attack_finished = (__instance.m_currentAttack == null) || (__instance.m_currentAttack.IsDone());
+            Attack atk = __instance.m_currentAttack;
+
+            bool attack_finished = atk.IsDone();
+            bool is_channeling_attack = atk.m_projectileBursts > 1;
+            bool channeling_done = atk.m_projectileBursts == atk.m_projectileBurstsFired;
+
             StackFrame[] frames = new StackTrace(fNeedFileInfo: true).GetFrames();
             bool cancel_attack = false;
             bool trying_to_block = false;
@@ -271,11 +272,7 @@ namespace Casualheim.attack_cancel {
                     if (block_just_began) {
                         cancel_attack = true;
                         trying_to_block = true;
-                        //if (State.player_started_secondary[p_hash])
-                        //    attack_min_time = 0.2f;
-                        //else
-                            attack_min_time = 0.1f;
-
+                        attack_min_time = 0.1f;
                     }
 
                     break;
@@ -293,52 +290,87 @@ namespace Casualheim.attack_cancel {
                 }
             }
 
+            PlayerAttackControls p_ctrl;
+            bool p_ctrl_available = State.player_controls.TryGetValue(p_hash, out p_ctrl);
+
             if (!cancel_attack) {
-                PlayerAttackControls p_ctrl;
-                bool in_attack_stop = false;
+                bool in_attack_stop;
 
-                State.player_attack_stop.TryGetValue(p_hash, out in_attack_stop);
+                if (!State.player_attack_stop.TryGetValue(p_hash, out in_attack_stop))
+                    in_attack_stop = false;
 
-                if (!in_attack_stop && __instance.m_currentAttack != null && State.player_controls.TryGetValue(p_hash, out p_ctrl)) {
-                    Attack atk = __instance.m_currentAttack;
-                    bool is_channeling_attack = atk.m_projectileBursts > 1;
-                    bool channeling_done = atk.m_projectileBursts == atk.m_projectileBurstsFired;
-
+                if (!in_attack_stop && p_ctrl_available) {
                     if (!atk.m_attackDone && (p_ctrl.atkHold || p_ctrl.secAtkHold) && is_channeling_attack && !channeling_done) {
-                        if (ThisPlugin.DebugOutput.Value)
-                            UnityEngine.Debug.Log("PlayerInAttackCancelPatch() :: preventing channeling attack from ending !!!");
-
                         __result = true;
-
                         return;
                     }
 
-                    float diff = 10f;
+                    float diff;
                     if (State.last_started_attack_time.TryGetValue(p_hash, out diff))
                         diff = time - diff;
+                    else
+                        diff = 10f;
 
                     if (diff > 0.2 && is_channeling_attack && ((!p_ctrl.atk && !p_ctrl.atkHold && !p_ctrl.secAtk && !p_ctrl.secAtkHold) || channeling_done)) {
                         if (ThisPlugin.DebugOutput.Value)
-                            UnityEngine.Debug.Log("stopping burst attack ::"
-                                + "\n\tm_projectileBurstsFired :: " + atk.m_projectileBurstsFired
-                                + "\n\tm_projectileBursts :: " + atk.m_projectileBursts
-                                + "\n\tm_projectileAttackStarted :: " + atk.m_projectileAttackStarted
-                                + "\n\tm_projectileFireTimer :: " + atk.m_projectileFireTimer
-                                + "\n\tm_attackType :: " + atk.m_attackType
-                            );
+                            UnityEngine.Debug.Log("Casualheim.PlayerInAttackCancelPatch | stopping channeling attack gracefully");
 
                         State.player_attack_stop[p_hash] = true;
                         __instance.m_nview.InvokeRPC(ZNetView.Everybody, "SetTrigger", new object[] { "csca!stop" });
-                        __instance.m_currentAttack = null;
+                        __instance.m_previousAttack = null;
+
+                        return;
                     }
                 }
             }
 
-            if (same_attack && !damage_done_long_ago && !trying_to_block)
+            if (!cancel_attack)
                 return;
 
-            if (!cancel_attack || (attack_finished && !damage_done_long_ago))
-                return;
+            if (is_channeling_attack && !channeling_done) {
+                bool in_attack_stop;
+
+                if (!State.player_attack_stop.TryGetValue(p_hash, out in_attack_stop))
+                    in_attack_stop = false;
+
+                if (!in_attack_stop) {
+                    if (ThisPlugin.DebugOutput.Value)
+                        UnityEngine.Debug.Log("Casualheim.PlayerInAttackCancelPatch | trying to \"cancel\" channeling attack");
+
+                    State.last_attack_cancel_dict[p_hash] = new AttackCancel {
+                        time = time,
+                        atk = atk.GetHashCode(),
+                        done = true
+                    };
+
+                    State.player_attack_stop[p_hash] = true;
+                    __instance.m_nview.InvokeRPC(ZNetView.Everybody, "SetTrigger", new object[] { "csca!stop" });
+                    __instance.m_previousAttack = null;
+                    __result = false;
+
+                    return;
+                }
+            }
+
+            if ((attack_finished || same_attack) && !damage_done_long_ago) {
+                if (p_ctrl_available && !p_ctrl.atk && !p_ctrl.atkHold && !p_ctrl.secAtk && !p_ctrl.secAtkHold && (time - damage_done_time) > 0.25f) {
+                    float promise_time;
+
+                    if (!State.player_no_attack_promise.TryGetValue(p_hash, out promise_time))
+                        promise_time = -1f;
+
+                    if ((time - promise_time) > 1f) {
+                        // promise was made recently and still active
+                        // allowing to cancel attack after dealing damage on "promise" that wont start another attack right after
+                        if (ThisPlugin.DebugOutput.Value)
+                            UnityEngine.Debug.Log("Casualheim.PlayerInAttackCancelPatch | making a promise of not attacking");
+
+                        State.player_no_attack_promise[p_hash] = time;
+                    }
+                }
+                else
+                    return;
+            }
 
             __instance.ClearActionQueue();
             __result = !CancelAttack(ref __instance, attack_min_time);
@@ -389,6 +421,19 @@ namespace Casualheim.attack_cancel {
             Player p = __instance as Player;
             int p_hash = p.GetHashCode();
             float time = Time.fixedTime;
+            float no_attack_promise;
+
+            if (!State.player_no_attack_promise.TryGetValue(p_hash, out no_attack_promise))
+                no_attack_promise = -1f;
+
+            if ((time - no_attack_promise) < 1f) {
+                // interrupting attack after damage is done must punish the dps significantly
+                if (ThisPlugin.DebugOutput.Value)
+                    UnityEngine.Debug.Log("cannot start attack because of a promise ::\n\tpromise time :: " + no_attack_promise + "\n\tdelta :: " + (time - no_attack_promise));
+
+                __result = false;
+                return false;
+            }
 
             if (State.last_ended_emote_time.ContainsKey(p_hash) && (time - State.last_ended_emote_time[p_hash] < 0.25f)) {
                 __result = false;
@@ -430,6 +475,11 @@ namespace Casualheim.attack_cancel {
 
             State.last_started_attack_time[p_hash] = time;
             State.player_attack_stop[p_hash] = false;
+
+            // resettings animation triggers before the attack
+            foreach (var trigger in __instance.m_zanim.m_animator.parameters)
+                if (trigger.type == AnimatorControllerParameterType.Trigger)
+                    __instance.m_zanim.m_animator.ResetTrigger(trigger.name);
 
             return true;
         }

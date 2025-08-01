@@ -41,6 +41,7 @@ namespace Casualheim.attack_cancel {
         public static Dictionary<int, bool> player_started_secondary = new Dictionary<int, bool>();
         public static Dictionary<int, PlayerAttackControls> player_controls = new Dictionary<int, PlayerAttackControls>();
         public static Dictionary<int, bool> player_attack_stop = new Dictionary<int, bool>();
+        public static Dictionary<int, float> player_no_attack_promise = new Dictionary<int, float>();
         public static Dictionary<int, WeakReference<Player>> zanim_player_dict = new Dictionary<int, WeakReference<Player>>();
     };
 }
